@@ -271,8 +271,8 @@ export const GameTerminal: React.FC<GameTerminalProps> = ({ difficulty, onRestar
   return (
     <Terminal>
       <div className="flex flex-col h-screen">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-0 px-3 sm:px-4 py-2 sm:py-3 border-b border-green-500/30">
+        {/* Header - Sticky on mobile */}
+        <div className="sticky top-0 z-10 bg-black flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-0 px-3 sm:px-4 py-2 sm:py-3 border-b border-green-500/30">
           <div className="flex items-center gap-2 sm:gap-4">
             <h1 className="font-mono text-green-400 text-base sm:text-lg font-bold">
               MISSION {gameEngine?.getCurrentLevel().id}/10
@@ -353,8 +353,8 @@ export const GameTerminal: React.FC<GameTerminalProps> = ({ difficulty, onRestar
           )}
         </AnimatePresence>
 
-        {/* Input */}
-        <div className="border-t border-green-500/30 p-4">
+        {/* Input - Will move above keyboard on mobile */}
+        <div className="border-t border-green-500/30 p-4 sticky bottom-0 bg-black">
           <CommandInput
             onCommand={handleCommand}
             disabled={levelStatus !== 'playing'}

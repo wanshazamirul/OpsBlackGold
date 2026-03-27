@@ -1,0 +1,35 @@
+{
+  "name": "Operation Black Gold",
+  "short_name": "OpsBlackGold",
+  "description": "A hacking game where you expose a conspiracy between oil companies and governments.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#22c55e",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["games"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Start Mission",
+      "short_name": "Play",
+      "description": "Start a new hacking mission",
+      "url": "/",
+      "icons": [{ "src": "/icon.png", "sizes": "192x192" }]
+    }
+  ]
+}

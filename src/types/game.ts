@@ -28,6 +28,7 @@ export interface GameState {
   totalTime: number;
   passwordChanged: boolean;
   currentPassword: string;
+  currentDirectory: string;
 }
 
 export interface Level {

@@ -22,6 +22,7 @@ export class GameEngine {
       totalTime: GAME_LEVELS[0].timeLimit,
       passwordChanged: false,
       currentPassword: '', // Will be set per level
+      currentDirectory: '', // Start at root
     };
     this.currentLevel = GAME_LEVELS[0];
     this.initializeFileSystem();
@@ -34,6 +35,7 @@ export class GameEngine {
     // Reset per-level state
     this.state.exfiltratedFiles = [];
     this.state.passwordChanged = false;
+    this.state.currentDirectory = ''; // Reset to root
 
     // Set initial password for level 2
     if (this.currentLevel.id === 2) {
@@ -101,15 +103,57 @@ export class GameEngine {
 
   private simulateFileSystem(): string {
     const fs = this.currentLevel.fileSystem;
+    const currentDir = this.state.currentDirectory;
     let output: string[] = [];
 
-    // List directories and files
-    const entries = Object.entries(fs);
-    entries.forEach(([name, content]) => {
-      if (typeof content === 'object' && content !== null && !Array.isArray(content)) {
-        output.push(`${name}/`);
+    // Get all unique top-level directories and files
+    const topLevelItems = new Set<string>();
+    const currentDirItems: string[] = [];
+
+    Object.entries(fs).forEach(([name, content]) => {
+      // Check if this is a directory marker (ends with /)
+      if (name.endsWith('/')) {
+        const dirName = name.slice(0, -1); // Remove trailing slash
+        topLevelItems.add(dirName);
+      } else if (!name.includes('/')) {
+        // Top-level file (no slashes)
+        topLevelItems.add(name);
+      } else if (currentDir) {
+        // Check if this file is in the current directory
+        const prefix = currentDir + '/';
+        if (name.startsWith(prefix)) {
+          // Get the filename relative to current directory
+          const relativeName = name.slice(prefix.length);
+          // Only show direct children, not nested items
+          if (!relativeName.includes('/')) {
+            currentDirItems.push(relativeName);
+          }
+        }
+      }
+    });
+
+    // If we're in a subdirectory, show its contents
+    if (currentDir) {
+      if (currentDirItems.length === 0) {
+        return `Directory: ${currentDir}\nEmpty directory`;
+      }
+      return `Directory: ${currentDir}\n${currentDirItems.join('\n')}`;
+    }
+
+    // Show top-level items
+    if (topLevelItems.size === 0) {
+      return 'Empty directory';
+    }
+
+    // Sort and format output
+    const sortedItems = Array.from(topLevelItems).sort();
+    sortedItems.forEach(item => {
+      // Check if it's a directory
+      const dirKey = item + '/';
+      if (fs[dirKey] !== undefined) {
+        output.push(`${item}/`);
       } else {
-        output.push(name);
+        output.push(item);
       }
     });
 
@@ -120,7 +164,12 @@ export class GameEngine {
     const fs = this.currentLevel.fileSystem;
 
     // Remove path separators for lookup
-    const cleanName = filename.replace(/^\.\//, '').replace(/\/$/, '');
+    let cleanName = filename.replace(/^\.\//, '').replace(/\/$/, '');
+
+    // If we're in a subdirectory and filename doesn't contain a path, prepend current directory
+    if (this.state.currentDirectory && !cleanName.includes('/')) {
+      cleanName = this.state.currentDirectory + '/' + cleanName;
+    }
 
     if (fs[cleanName]) {
       const content = fs[cleanName];
@@ -135,9 +184,18 @@ export class GameEngine {
   }
 
   private simulateDownloadFile(filename: string): { success: boolean; message: string } {
-    const fileData = this.simulateReadFile(filename);
+    const fs = this.currentLevel.fileSystem;
 
-    if (!fileData.found) {
+    // Build full path for storage
+    let fullPath = filename.replace(/^\.\//, '').replace(/\/$/, '');
+
+    // If we're in a subdirectory and filename doesn't contain a path, prepend current directory
+    if (this.state.currentDirectory && !fullPath.includes('/')) {
+      fullPath = this.state.currentDirectory + '/' + fullPath;
+    }
+
+    // Check if file exists
+    if (!fs[fullPath]) {
       return {
         success: false,
         message: `Error: File '${filename}' not found. Cannot download.`,
@@ -145,22 +203,28 @@ export class GameEngine {
     }
 
     // Check if already downloaded
-    if (this.state.exfiltratedFiles.includes(filename)) {
+    if (this.state.exfiltratedFiles.includes(fullPath)) {
       return {
         success: true,
         message: `File '${filename}' already downloaded to your secure server.\n\nLocation: /home/agent/exfil/${filename}`,
       };
     }
 
+    // Get file content and calculate size
+    const content = fs[fullPath];
+    const contentStr = typeof content === 'string' ? content : content.join('\n');
+    const size = new Blob([contentStr]).size;
+
     // Simulate download
     const downloadProgress = [
       '▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 100%',
       `\nFile '${filename}' downloaded successfully!`,
       `Saved to: /home/agent/exfil/${filename}`,
-      `Size: ${new Blob([fileData.content]).size} bytes`,
+      `Size: ${size} bytes`,
     ];
 
-    this.state.exfiltratedFiles.push(filename);
+    // Store the full path for level completion checks
+    this.state.exfiltratedFiles.push(fullPath);
 
     return {
       success: true,
@@ -212,12 +276,40 @@ export class GameEngine {
 
   private simulateCd(directory: string): string {
     const fs = this.currentLevel.fileSystem;
-    const cleanDir = directory.replace(/^\.\//, '').replace(/\/$/, '');
 
-    if (fs[cleanDir]) {
-      if (typeof fs[cleanDir] === 'object' && fs[cleanDir] !== null) {
-        return `Changed to directory: ${directory}`;
+    // Handle special cases
+    if (directory === '..') {
+      // Go to parent directory (back to root)
+      if (this.state.currentDirectory === '') {
+        return 'Already at root directory';
       }
+      this.state.currentDirectory = '';
+      return 'Changed to root directory';
+    }
+
+    // Clean the directory name
+    let cleanDir = directory.replace(/^\.\//, '').replace(/\/$/, '');
+
+    // Check if directory exists (with or without trailing slash)
+    const dirWithSlash = cleanDir + '/';
+
+    // Check if we're trying to cd into a subdirectory from current directory
+    if (this.state.currentDirectory) {
+      const fullPath = this.state.currentDirectory + '/' + cleanDir;
+      const fullPathWithSlash = fullPath + '/';
+
+      if (fs[fullPathWithSlash] !== undefined || (fs[fullPath] !== undefined && typeof fs[fullPath] === 'object')) {
+        this.state.currentDirectory = fullPath;
+        return `Changed to directory: ${fullPath}`;
+      }
+
+      return `Error: Directory '${directory}' not found`;
+    }
+
+    // Check at root level
+    if (fs[dirWithSlash] !== undefined || (fs[cleanDir] !== undefined && typeof fs[cleanDir] === 'object')) {
+      this.state.currentDirectory = cleanDir;
+      return `Changed to directory: ${cleanDir}`;
     }
 
     return `Error: Directory '${directory}' not found`;
@@ -233,7 +325,8 @@ export class GameEngine {
   }
 
   private simulatePwd(): string {
-    return '/home/agent/mission_' + this.currentLevel.id;
+    const base = '/home/agent/mission_' + this.currentLevel.id;
+    return this.state.currentDirectory ? `${base}/${this.state.currentDirectory}` : base;
   }
 
   private simulateClear(): string {
