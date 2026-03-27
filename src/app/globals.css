@@ -1,26 +1,190 @@
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Retro terminal colors */
+  --color-background: #0a0a0a;
+  --color-primary: #00ff00;
+  --color-secondary: #00cc00;
+  --color-user: #00ff00;
+  --color-ai: #33ff33;
+  --color-yellow: #ffff00;
+  --color-magenta: #ff00ff;
+  --color-cyan: #00ffff;
+  --color-amber: #ffb000;
+  --color-amber-secondary: #cc8f00;
+
+  /* Effects */
+  --glow: 0 0 10px #00ff00, 0 0 20px #00ff00;
+  --glow-strong: 0 0 10px #00ff00, 0 0 20px #00ff00, 0 0 30px #00ff00;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--color-background);
+  --color-primary: var(--color-primary);
+  --color-secondary: var(--color-secondary);
+  --font-mono: 'Fira Code', monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-background);
+  color: var(--color-primary);
+  font-family: 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* CRT Scanlines Effect */
+.crt-scanlines::before {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(18, 16, 16, 0) 50%,
+    rgba(0, 0, 0, 0.25) 50%
+  );
+  background-size: 100% 4px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* CRT Vignette Effect */
+.crt-vignette::after {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: radial-gradient(
+    circle,
+    rgba(0, 0, 0, 0) 60%,
+    rgba(0, 0, 0, 0.6) 100%
+  );
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Text Glow Effects */
+.text-glow {
+  text-shadow: var(--glow);
+}
+
+.text-glow-strong {
+  text-shadow: var(--glow-strong);
+}
+
+/* Screen Flicker Animation */
+@keyframes flicker {
+  0% {
+    opacity: 0.97;
+  }
+  5% {
+    opacity: 0.95;
+  }
+  10% {
+    opacity: 0.9;
+  }
+  15% {
+    opacity: 0.95;
+  }
+  20% {
+    opacity: 0.99;
+  }
+  25% {
+    opacity: 0.95;
+  }
+  30% {
+    opacity: 0.9;
+  }
+  35% {
+    opacity: 0.96;
+  }
+  40% {
+    opacity: 0.98;
+  }
+  45% {
+    opacity: 0.95;
+  }
+  50% {
+    opacity: 0.99;
+  }
+  55% {
+    opacity: 0.93;
+  }
+  60% {
+    opacity: 0.9;
+  }
+  65% {
+    opacity: 0.96;
+  }
+  70% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 0.97;
+  }
+  80% {
+    opacity: 0.95;
+  }
+  85% {
+    opacity: 0.92;
+  }
+  90% {
+    opacity: 0.95;
+  }
+  95% {
+    opacity: 0.99;
+  }
+  100% {
+    opacity: 0.94;
+  }
+}
+
+.screen-flicker {
+  animation: flicker 0.15s infinite;
+}
+
+/* Blinking Cursor Animation */
+@keyframes blink {
+  0%, 49% {
+    opacity: 1;
+  }
+  50%, 100% {
+    opacity: 0;
+  }
+}
+
+.cursor-blink {
+  animation: blink 1s step-end infinite;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-secondary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary);
 }
