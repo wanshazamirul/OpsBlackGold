@@ -12,7 +12,7 @@ export type CompletionRequirementType =
 
 export interface CompletionRequirement {
   type: CompletionRequirementType;
-  target: string | string[];
+  target?: string | string[];
   count?: number;
 }
 

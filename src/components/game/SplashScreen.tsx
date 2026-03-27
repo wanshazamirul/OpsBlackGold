@@ -208,7 +208,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onStart }) => {
           transition={{ delay: 0.5 }}
           className="mt-6 sm:mt-8 font-mono text-[10px] sm:text-xs text-green-600 text-center px-2"
         >
-          Developed by Shuhada & Wan | Inspired by true events
+          Developed by Shu & Wan | Inspired by true events
         </motion.div>
       </div>
     </Terminal>

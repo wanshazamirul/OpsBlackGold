@@ -59,7 +59,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
   const fileType = getFileType(filename);
 
   // Format content based on file type
-  const formatContent = (text: string, type: string): JSX.Element => {
+  const formatContent = (text: string, type: string) => {
     const lines = text.split('\n');
 
     return (
@@ -74,7 +74,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
   };
 
   // Format individual line based on content
-  const formatLine = (line: string, type: string): JSX.Element => {
+  const formatLine = (line: string, type: string) => {
     if (!line) return <span>&nbsp;</span>;
 
     switch (type) {
@@ -122,7 +122,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
   };
 
   // Highlight config keywords
-  const highlightConfig = (line: string): JSX.Element => {
+  const highlightConfig = (line: string) => {
     const parts = line.split(/(ACCEPT|REJECT|--|port|frequency|status|password|user|root|admin)/gi);
     return (
       <>
@@ -138,7 +138,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
   };
 
   // Highlight script syntax
-  const highlightScript = (line: string): JSX.Element => {
+  const highlightScript = (line: string) => {
     const parts = line.split(/(\[|\]|\(|\)|if|then|else|fi|do|done|for|while|echo|exit|return)/g);
     return (
       <>
@@ -154,7 +154,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
   };
 
   // Highlight important keywords
-  const highlightKeywords = (line: string): JSX.Element => {
+  const highlightKeywords = (line: string) => {
     const lower = line.toLowerCase();
     const parts = line.split(
       /(classified|secret|top secret|confidential|password|error|warning|success|failed|approved|conspiracy|evidence|bribe|payment|operation|mission|nemesis)/gi

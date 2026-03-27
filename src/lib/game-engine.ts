@@ -694,7 +694,9 @@ export class GameEngine {
             ? downloadedCount >= requirement.count
             : downloadedCount === requirement.target.length;
         }
-        return this.state.exfiltratedFiles.includes(requirement.target);
+        return requirement.target
+          ? this.state.exfiltratedFiles.includes(requirement.target)
+          : false;
 
       case 'password_change':
         return this.state.passwordChanged;
