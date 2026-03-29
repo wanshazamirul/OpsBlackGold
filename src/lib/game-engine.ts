@@ -8,6 +8,7 @@ export class GameEngine {
   private timerInterval: NodeJS.Timeout | null = null;
   private onTimerUpdate?: (timeRemaining: number) => void;
   private onTimeUp?: () => void;
+  private downloadProgress: { filename: string; progress: number; speed: string; isComplete: boolean } | null = null;
 
   constructor(difficulty: Difficulty, onTimerUpdate?: (timeRemaining: number) => void, onTimeUp?: () => void) {
     this.state = {
@@ -183,7 +184,7 @@ export class GameEngine {
     return { content: `Error: File '${filename}' not found`, found: false };
   }
 
-  private simulateDownloadFile(filename: string): { success: boolean; message: string } {
+  private simulateDownloadFile(filename: string): { success: boolean; message: string; isDownloading?: boolean } {
     const fs = this.currentLevel.fileSystem;
 
     // Build full path for storage
@@ -215,21 +216,110 @@ export class GameEngine {
     const contentStr = typeof content === 'string' ? content : content.join('\n');
     const size = new Blob([contentStr]).size;
 
-    // Simulate download
-    const downloadProgress = [
-      '▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 100%',
-      `\nFile '${filename}' downloaded successfully!`,
-      `Saved to: /home/agent/exfil/${filename}`,
-      `Size: ${size} bytes`,
-    ];
-
-    // Store the full path for level completion checks
-    this.state.exfiltratedFiles.push(fullPath);
+    // Start progressive download simulation
+    this.startDownloadSimulation(filename, size);
 
     return {
       success: true,
-      message: downloadProgress.join('\n'),
+      message: `Initializing download: ${filename}...\nSize: ${size} bytes\nConnecting to secure exfiltration server...`,
+      isDownloading: true,
     };
+  }
+
+  private startDownloadSimulation(filename: string, totalSize: number): void {
+    let progress = 0;
+    const stages = [5, 15, 30, 50, 70, 85, 95, 100];
+    let currentStage = 0;
+
+    // Random connection speed (in KB/s) - varies by "network conditions"
+    const getConnectionSpeed = (): string => {
+      const speeds = [
+        { min: 50, max: 150, label: 'KB/s' },   // Fast
+        { min: 20, max: 80, label: 'KB/s' },    // Medium
+        { min: 5, max: 30, label: 'KB/s' },     // Slow
+        { min: 1, max: 10, label: 'KB/s' },     // Very slow
+      ];
+      const speed = speeds[Math.floor(Math.random() * speeds.length)];
+      const value = Math.floor(Math.random() * (speed.max - speed.min + 1)) + speed.min;
+      return `${value} ${speed.label}`;
+    };
+
+    const updateProgress = () => {
+      if (currentStage >= stages.length) {
+        // Download complete - add suspense delay before finalizing
+        this.downloadProgress = {
+          filename,
+          progress: 100,
+          speed: getConnectionSpeed(),
+          isComplete: false,
+        };
+
+        // Suspense delay: 2-4 seconds before finalizing
+        const suspenseDelay = Math.floor(Math.random() * 2000) + 2000;
+
+        setTimeout(() => {
+          // Store the full path for level completion checks
+          let fullPath = filename;
+          if (this.state.currentDirectory && !filename.includes('/')) {
+            fullPath = this.state.currentDirectory + '/' + filename;
+          }
+          this.state.exfiltratedFiles.push(fullPath);
+
+          this.downloadProgress = {
+            filename,
+            progress: 100,
+            speed: getConnectionSpeed(),
+            isComplete: true,
+          };
+        }, suspenseDelay);
+
+        return;
+      }
+
+      const targetProgress = stages[currentStage];
+      const speed = getConnectionSpeed();
+      const progressBar = this.createProgressBar(targetProgress);
+
+      this.downloadProgress = {
+        filename,
+        progress: targetProgress,
+        speed,
+        isComplete: false,
+      };
+
+      currentStage++;
+
+      // Variable delay between progress updates (simulating network conditions)
+      const baseDelay = 800; // Base delay in ms
+      const randomDelay = Math.floor(Math.random() * 1200); // Random 0-1200ms
+      const totalDelay = baseDelay + randomDelay;
+
+      setTimeout(updateProgress, totalDelay);
+    };
+
+    // Start the download simulation
+    updateProgress();
+  }
+
+  private createProgressBar(progress: number): string {
+    const barLength = 25;
+    const filledLength = Math.floor((progress / 100) * barLength);
+    const emptyLength = barLength - filledLength;
+    const filledBar = '█'.repeat(filledLength);
+    const emptyBar = '░'.repeat(emptyLength);
+    return `${filledBar}${emptyBar} ${progress}%`;
+  }
+
+  getDownloadProgress(): { filename: string; progress: number; speed: string; isComplete: boolean } | null {
+    return this.downloadProgress;
+  }
+
+  isDownloadInProgress(): boolean {
+    return this.downloadProgress !== null && !this.downloadProgress.isComplete;
+  }
+
+  clearDownloadProgress(): void {
+    this.downloadProgress = null;
   }
 
   private simulateGrep(pattern: string, target?: string): string {
@@ -269,6 +359,17 @@ export class GameEngine {
 
   private simulateEcho(content: string, filename?: string): string {
     if (filename) {
+      // Build full path considering current directory
+      let fullPath = filename.replace(/^\.\//, '').replace(/\/$/, '');
+
+      // If we're in a subdirectory and filename doesn't contain a path, prepend current directory
+      if (this.state.currentDirectory && !fullPath.includes('/')) {
+        fullPath = this.state.currentDirectory + '/' + fullPath;
+      }
+
+      // Add file to filesystem
+      this.currentLevel.fileSystem[fullPath] = content;
+
       return `File written: ${filename}\n${content}`;
     }
     return content;
@@ -424,10 +525,32 @@ export class GameEngine {
   }
 
   private simulateMkdir(dirname: string): string {
+    // Build full path considering current directory
+    let fullPath = dirname.replace(/^\.\//, '').replace(/\/$/, '');
+
+    // If we're in a subdirectory and dirname doesn't contain a path, prepend current directory
+    if (this.state.currentDirectory && !fullPath.includes('/')) {
+      fullPath = this.state.currentDirectory + '/' + fullPath;
+    }
+
+    // Add directory to filesystem (with trailing slash to indicate it's a directory)
+    this.currentLevel.fileSystem[fullPath + '/'] = {};
+
     return `Directory created: ${dirname}`;
   }
 
   private simulateTouch(filename: string): string {
+    // Build full path considering current directory
+    let fullPath = filename.replace(/^\.\//, '').replace(/\/$/, '');
+
+    // If we're in a subdirectory and filename doesn't contain a path, prepend current directory
+    if (this.state.currentDirectory && !fullPath.includes('/')) {
+      fullPath = this.state.currentDirectory + '/' + fullPath;
+    }
+
+    // Add empty file to filesystem
+    this.currentLevel.fileSystem[fullPath] = '';
+
     return `File created: ${filename}`;
   }
 

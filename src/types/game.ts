@@ -51,4 +51,5 @@ export interface CommandResult {
   gameOver?: boolean;
   downloadedFile?: string;
   passwordChanged?: boolean;
+  isDownloading?: boolean;
 }

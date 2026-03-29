@@ -150,8 +150,84 @@ export const GameTerminal: React.FC<GameTerminalProps> = ({ difficulty, onRestar
     // Add result to output
     setOutput(prev => [...prev, result.message]);
 
-    // Check if level complete
-    if (result.nextLevel) {
+    // Check if download is in progress
+    if (result.isDownloading) {
+      // Start polling for download progress
+      const pollInterval = setInterval(() => {
+        if (!gameEngine) {
+          clearInterval(pollInterval);
+          return;
+        }
+
+        const progress = gameEngine.getDownloadProgress();
+        if (!progress) {
+          clearInterval(pollInterval);
+          return;
+        }
+
+        const progressBar = '█'.repeat(Math.floor((progress.progress / 100) * 25)) +
+                           '░'.repeat(25 - Math.floor((progress.progress / 100) * 25));
+
+        const progressMessage = `\r${progressBar} ${progress.progress}% | Speed: ${progress.speed}`;
+
+        setOutput(prev => {
+          // Update the last line with progress
+          const updated = [...prev];
+          updated[updated.length - 1] = progressMessage;
+          return updated;
+        });
+
+        if (progress.isComplete) {
+          clearInterval(pollInterval);
+
+          // Add completion message
+          const filename = progress.filename;
+          setOutput(prev => [
+            ...prev,
+            '',
+            `✓ Download complete: ${filename}`,
+            `Saved to: /home/agent/exfil/${filename}`,
+            '',
+          ]);
+
+          // Clear download progress
+          gameEngine.clearDownloadProgress();
+
+          // Check if level complete after download
+          setTimeout(() => {
+            if (!gameEngine) return;
+            const levelComplete = gameEngine.getCurrentLevel().completionRequirements.length > 0;
+            if (levelComplete) {
+              setLevelStatus('complete');
+
+              setTimeout(() => {
+                if (gameEngine) {
+                  gameEngine.advanceLevel();
+                  const newLevel = gameEngine.getCurrentLevel();
+                  setLevelStatus('playing');
+                  setTimeRemaining(newLevel.timeLimit);
+                  setTotalTime(newLevel.timeLimit);
+                  setIsPaused(false);
+                  gameEngine.startTimer();
+                  setOutput([
+                    `LEVEL ${newLevel.id}: ${newLevel.title}`,
+                    '',
+                    `> ${newLevel.objective}`,
+                    '',
+                    `TIME LIMIT: ${Math.floor(newLevel.timeLimit / 60)}:${(newLevel.timeLimit % 60).toString().padStart(2, '0')}`,
+                    '',
+                    'Type "help" for available commands.',
+                  ]);
+                }
+              }, 3000);
+            }
+          }, 1500);
+        }
+      }, 500);
+    }
+
+    // Check if level complete (for non-download commands)
+    if (result.nextLevel && !result.isDownloading) {
       setLevelStatus('complete');
 
       setTimeout(() => {
