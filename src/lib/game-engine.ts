@@ -231,6 +231,14 @@ export class GameEngine {
     const stages = [5, 15, 30, 50, 70, 85, 95, 100];
     let currentStage = 0;
 
+    // Initialize downloadProgress immediately so polling can find it
+    this.downloadProgress = {
+      filename,
+      progress: 0,
+      speed: 'Initializing...',
+      isComplete: false,
+    };
+
     // Random connection speed (in KB/s) - varies by "network conditions"
     const getConnectionSpeed = (): string => {
       const speeds = [
