@@ -751,6 +751,7 @@ export class GameEngine {
         message: downloadResult.message,
         downloadedFile: downloadResult.success ? args[0] : undefined,
         nextLevel: levelComplete,
+        isDownloading: true,
       };
     }
 
