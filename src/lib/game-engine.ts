@@ -534,7 +534,7 @@ export class GameEngine {
     }
 
     // Add directory to filesystem (with trailing slash to indicate it's a directory)
-    this.currentLevel.fileSystem[fullPath + '/'] = {};
+    this.currentLevel.fileSystem[fullPath + '/'] = '';
 
     return `Directory created: ${dirname}`;
   }
