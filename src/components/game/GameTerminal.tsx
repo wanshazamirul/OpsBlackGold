@@ -152,15 +152,21 @@ export const GameTerminal: React.FC<GameTerminalProps> = ({ difficulty, onRestar
 
     // Check if download is in progress
     if (result.isDownloading) {
+      console.log('[DEBUG] Download starting, polling...');
+
       // Start polling for download progress
       const pollInterval = setInterval(() => {
         if (!gameEngine) {
+          console.log('[DEBUG] No gameEngine, clearing interval');
           clearInterval(pollInterval);
           return;
         }
 
         const progress = gameEngine.getDownloadProgress();
+        console.log('[DEBUG] Poll tick, progress:', progress);
+
         if (!progress) {
+          console.log('[DEBUG] No progress data, clearing interval');
           clearInterval(pollInterval);
           return;
         }
@@ -170,13 +176,17 @@ export const GameTerminal: React.FC<GameTerminalProps> = ({ difficulty, onRestar
 
         const progressMessage = `${progressBar} ${progress.progress}% | Speed: ${progress.speed}`;
 
+        console.log('[DEBUG] Updating output with progress:', progressMessage);
+
         setOutput(prev => {
           // Append progress as new line (web terminals don't support \r overwriting)
           const updated = [...prev, progressMessage];
+          console.log('[DEBUG] New output length:', updated.length);
           return updated;
         });
 
         if (progress.isComplete) {
+          console.log('[DEBUG] Download complete, clearing interval');
           clearInterval(pollInterval);
 
           // Add completion message
