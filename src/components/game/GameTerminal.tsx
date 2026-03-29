@@ -168,12 +168,11 @@ export const GameTerminal: React.FC<GameTerminalProps> = ({ difficulty, onRestar
         const progressBar = '█'.repeat(Math.floor((progress.progress / 100) * 25)) +
                            '░'.repeat(25 - Math.floor((progress.progress / 100) * 25));
 
-        const progressMessage = `\r${progressBar} ${progress.progress}% | Speed: ${progress.speed}`;
+        const progressMessage = `${progressBar} ${progress.progress}% | Speed: ${progress.speed}`;
 
         setOutput(prev => {
-          // Update the last line with progress
-          const updated = [...prev];
-          updated[updated.length - 1] = progressMessage;
+          // Append progress as new line (web terminals don't support \r overwriting)
+          const updated = [...prev, progressMessage];
           return updated;
         });
 
