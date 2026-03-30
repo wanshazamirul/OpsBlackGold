@@ -29,6 +29,8 @@ export const GameTerminal: React.FC<GameTerminalProps> = ({ difficulty, onRestar
   const [gameEngine, setGameEngine] = useState<GameEngine | null>(null);
   const [output, setOutput] = useState<string[]>([]);
   const [input, setInput] = useState('');
+  const [commandHistory, setCommandHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
   const [levelStatus, setLevelStatus] = useState<'playing' | 'complete' | 'gameover' | 'timeup'>('playing');
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const [totalTime, setTotalTime] = useState<number>(0);
@@ -57,7 +59,28 @@ export const GameTerminal: React.FC<GameTerminalProps> = ({ difficulty, onRestar
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && input.trim()) {
       handleCommand(input.trim());
+      setCommandHistory(prev => [...prev, input.trim()]);
       setInput('');
+      setHistoryIndex(-1);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (commandHistory.length > 0) {
+        const newIndex = historyIndex < commandHistory.length - 1
+          ? historyIndex + 1
+          : historyIndex;
+        setHistoryIndex(newIndex);
+        setInput(commandHistory[commandHistory.length - 1 - newIndex]);
+      }
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (historyIndex > 0) {
+        const newIndex = historyIndex - 1;
+        setHistoryIndex(newIndex);
+        setInput(commandHistory[commandHistory.length - 1 - newIndex]);
+      } else if (historyIndex === 0) {
+        setHistoryIndex(-1);
+        setInput('');
+      }
     }
   };
 
