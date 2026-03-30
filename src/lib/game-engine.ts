@@ -102,6 +102,10 @@ export class GameEngine {
     return this.state.exfiltratedFiles;
   }
 
+  getCurrentDirectory(): string {
+    return this.state.currentDirectory;
+  }
+
   private simulateFileSystem(): string {
     const fs = this.currentLevel.fileSystem;
     const currentDir = this.state.currentDirectory;
@@ -390,10 +394,10 @@ export class GameEngine {
     if (directory === '..') {
       // Go to parent directory (back to root)
       if (this.state.currentDirectory === '') {
-        return 'Already at root directory';
+        return ''; // Already at root, no message needed
       }
       this.state.currentDirectory = '';
-      return 'Changed to root directory';
+      return ''; // Changed to root, no message needed (prompt will update)
     }
 
     // Clean the directory name
@@ -409,7 +413,7 @@ export class GameEngine {
 
       if (fs[fullPathWithSlash] !== undefined || (fs[fullPath] !== undefined && typeof fs[fullPath] === 'object')) {
         this.state.currentDirectory = fullPath;
-        return `Changed to directory: ${fullPath}`;
+        return ''; // Changed successfully, no message needed (prompt will update)
       }
 
       return `Error: Directory '${directory}' not found`;
@@ -418,7 +422,7 @@ export class GameEngine {
     // Check at root level
     if (fs[dirWithSlash] !== undefined || (fs[cleanDir] !== undefined && typeof fs[cleanDir] === 'object')) {
       this.state.currentDirectory = cleanDir;
-      return `Changed to directory: ${cleanDir}`;
+      return ''; // Changed successfully, no message needed (prompt will update)
     }
 
     return `Error: Directory '${directory}' not found`;

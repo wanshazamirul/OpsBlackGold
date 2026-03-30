@@ -46,6 +46,12 @@ export const GameTerminal: React.FC<GameTerminalProps> = ({ difficulty, onRestar
   const outputRef = useRef<HTMLDivElement>(null);
   const progressLineIndexRef = useRef<number | null>(null);
 
+  // Format terminal prompt for output
+  const formatPrompt = (directory: string) => {
+    const dir = directory || '~';
+    return `agent@ops-black-gold:${dir}$`;
+  };
+
   // Initialize game
   useEffect(() => {
     const handleTimerUpdate = (time: number) => {
@@ -136,13 +142,15 @@ export const GameTerminal: React.FC<GameTerminalProps> = ({ difficulty, onRestar
         handleOpenDocument(filename, fileData);
 
         // Add command to output
-        setOutput(prev => [...prev, `$ ${input}`, `Reading file: ${filename}...`]);
+        const prompt = formatPrompt(gameEngine.getCurrentDirectory());
+        setOutput(prev => [...prev, `${prompt} ${input}`, `Reading file: ${filename}...`]);
         return;
       }
     }
 
     // Add command to output
-    const newOutput = [...output, `$ ${input}`];
+    const prompt = formatPrompt(gameEngine.getCurrentDirectory());
+    const newOutput = [...output, `${prompt} ${input}`];
     setOutput(newOutput);
 
     // Process command
@@ -455,6 +463,7 @@ export const GameTerminal: React.FC<GameTerminalProps> = ({ difficulty, onRestar
           <CommandInput
             onCommand={handleCommand}
             disabled={levelStatus !== 'playing'}
+            currentDirectory={gameEngine?.getCurrentDirectory()}
           />
         </div>
       </div>

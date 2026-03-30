@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 interface CommandInputProps {
   onCommand: (command: string) => void;
   disabled?: boolean;
+  currentDirectory?: string;
 }
 
 /**
@@ -20,7 +21,8 @@ interface CommandInputProps {
  */
 export const CommandInput: React.FC<CommandInputProps> = ({
   onCommand,
-  disabled = false
+  disabled = false,
+  currentDirectory = ''
 }) => {
   const [input, setInput] = useState('');
   const [history, setHistory] = useState<string[]>([]);
@@ -29,6 +31,12 @@ export const CommandInput: React.FC<CommandInputProps> = ({
 
   // Available commands for autocomplete
   const commands = ['/help', '/new', '/clear', '/export', '/import', '/theme'];
+
+  // Format terminal prompt
+  const getPrompt = () => {
+    const dir = currentDirectory || '~';
+    return `agent@ops-black-gold:${dir}$`;
+  };
 
   // Auto-focus input on mount
   useEffect(() => {
@@ -89,7 +97,7 @@ export const CommandInput: React.FC<CommandInputProps> = ({
     >
       {/* Prompt indicator */}
       <span className="font-mono text-green-500 text-base sm:text-lg mr-1 sm:mr-2 whitespace-nowrap">
-        {'> '}
+        {getPrompt()}
       </span>
 
       {/* Terminal-styled input */}
