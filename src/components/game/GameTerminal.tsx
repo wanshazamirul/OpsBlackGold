@@ -44,6 +44,7 @@ export const GameTerminal: React.FC<GameTerminalProps> = ({ difficulty, onRestar
   });
 
   const outputRef = useRef<HTMLDivElement>(null);
+  const progressLineIndexRef = useRef<number | null>(null);
 
   // Initialize game
   useEffect(() => {
@@ -154,6 +155,13 @@ export const GameTerminal: React.FC<GameTerminalProps> = ({ difficulty, onRestar
     if (result.isDownloading) {
       console.log('[DEBUG] Download starting, polling...');
 
+      // Create initial progress line and store its index
+      setOutput(prev => {
+        const updated = [...prev, '░░░░░░░░░░░░░░░░░░░░░░░░░░ 0% | Speed: Initializing...'];
+        progressLineIndexRef.current = updated.length - 1;
+        return updated;
+      });
+
       // Start polling for download progress
       const pollInterval = setInterval(() => {
         if (!gameEngine) {
@@ -178,16 +186,20 @@ export const GameTerminal: React.FC<GameTerminalProps> = ({ difficulty, onRestar
 
         console.log('[DEBUG] Updating output with progress:', progressMessage);
 
+        // Update the progress line in place
         setOutput(prev => {
-          // Append progress as new line (web terminals don't support \r overwriting)
-          const updated = [...prev, progressMessage];
-          console.log('[DEBUG] New output length:', updated.length);
+          if (progressLineIndexRef.current === null || progressLineIndexRef.current >= prev.length) {
+            return prev;
+          }
+          const updated = [...prev];
+          updated[progressLineIndexRef.current] = progressMessage;
           return updated;
         });
 
         if (progress.isComplete) {
           console.log('[DEBUG] Download complete, clearing interval');
           clearInterval(pollInterval);
+          progressLineIndexRef.current = null;
 
           // Add completion message
           const filename = progress.filename;
