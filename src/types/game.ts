@@ -29,13 +29,16 @@ export interface GameState {
   passwordChanged: boolean;
   currentPassword: string;
   currentDirectory: string;
+  hintsUsed: number; // Track hints used in current level
+  completedSteps: string[]; // Track completed steps for progressive hints
 }
 
 export interface Level {
   id: number;
   title: string;
   objective: string;
-  hint: string;
+  hint: string; // Deprecated - use hints array instead
+  hints?: string[]; // Progressive hints - each gets more specific
   allowedCommands: string[];
   expectedCommands: string[];
   completionRequirements: CompletionRequirement[];

@@ -7,6 +7,10 @@ export const GAME_LEVELS: Level[] = [
     title: 'LEVEL 1: RECONNAISSANCE',
     objective: 'Gather intelligence on oil cartel manipulation from PetroGlobal executives.',
     hint: 'Use `ls` to see files, `cat <filename>` to read them. Use `download <filename>` to exfiltrate files to your secure server.',
+    hints: [
+      'Start by exploring the current directory. Use `ls` to see what files are available.',
+      'Read the intel_report.txt file using `cat intel_report.txt`, then exfiltrate it with `download intel_report.txt`.'
+    ],
     allowedCommands: ['ls', 'cat', 'help', 'pwd', 'clear', 'download', 'exfil'],
     expectedCommands: ['cat', 'ls'],
     completionRequirements: [
@@ -27,6 +31,11 @@ export const GAME_LEVELS: Level[] = [
     title: 'LEVEL 2: PASSWORD RESET',
     objective: 'Reset the PetroGlobal CEO\'s email password and access their secret correspondence.',
     hint: 'Use `cd <directory>` to navigate. Find the password reset utility. Use `passwd <new_password>` to change it, then `login <password>` to verify.',
+    hints: [
+      'Explore the directory structure to find the password reset utility. Try looking in the bin/ directory.',
+      'Read the passwd.txt file to learn how to use the password command: `cat bin/passwd.txt`',
+      'Change the password with `passwd <new_password>`, then verify access with `login <new_password>`.'
+    ],
     allowedCommands: ['ls', 'cat', 'cd', 'pwd', 'help', 'clear', 'grep', 'passwd', 'login'],
     expectedCommands: ['cd', 'cat'],
     completionRequirements: [
@@ -52,6 +61,10 @@ export const GAME_LEVELS: Level[] = [
     title: 'LEVEL 3: DATA EXFILTRATION',
     objective: 'Steal classified documents showing government collusion with oil cartels.',
     hint: 'Use `grep <keyword> <files>` to search for specific terms. Navigate to documents/ and download all classified files.',
+    hints: [
+      'Navigate to the documents/ directory and list its contents to see what classified files are available.',
+      'Download all three classified documents: secret_cabal.txt, war_plan.txt, and payments.txt using the `download` command.'
+    ],
     allowedCommands: ['ls', 'cat', 'cd', 'pwd', 'help', 'clear', 'grep', 'head', 'tail', 'download', 'exfil'],
     expectedCommands: ['grep', 'cat'],
     completionRequirements: [
@@ -79,6 +92,11 @@ export const GAME_LEVELS: Level[] = [
     title: 'LEVEL 4: BYPASS FIREWALL',
     objective: 'Bypass the Iranian Oil Ministry firewall and access their mainframe.',
     hint: 'Find the firewall configuration file. Look for vulnerabilities or backdoors. Document the backdoor port.',
+    hints: [
+      'Start by exploring the directory structure. Look for configuration files that might contain firewall settings.',
+      'Navigate to the etc/ directory using `cd etc`. This is where system configuration files are typically stored.',
+      'Use `cat firewall.conf` to read the firewall configuration, then use `grep` to search for "BACKDOOR" or "31337" to document the vulnerability.'
+    ],
     allowedCommands: ['ls', 'cat', 'cd', 'pwd', 'help', 'clear', 'grep', 'find', 'chmod'],
     expectedCommands: ['find', 'cat', 'chmod'],
     completionRequirements: [

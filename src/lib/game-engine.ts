@@ -24,6 +24,8 @@ export class GameEngine {
       passwordChanged: false,
       currentPassword: '', // Will be set per level
       currentDirectory: '', // Start at root
+      hintsUsed: 0,
+      completedSteps: [],
     };
     this.currentLevel = GAME_LEVELS[0];
     this.initializeFileSystem();
@@ -37,6 +39,8 @@ export class GameEngine {
     this.state.exfiltratedFiles = [];
     this.state.passwordChanged = false;
     this.state.currentDirectory = ''; // Reset to root
+    this.state.hintsUsed = 0; // Reset hint counter
+    this.state.completedSteps = []; // Reset completed steps
 
     // Set initial password for level 2
     if (this.currentLevel.id === 2) {
@@ -976,10 +980,40 @@ export class GameEngine {
   }
 
   getHint(): string {
+    // If level has progressive hints, use them
+    if (this.currentLevel.hints && this.currentLevel.hints.length > 0) {
+      const hintIndex = Math.min(this.state.hintsUsed, this.currentLevel.hints.length - 1);
+      this.state.hintsUsed++;
+
+      const hint = this.currentLevel.hints[hintIndex];
+      const remaining = this.currentLevel.hints.length - this.state.hintsUsed;
+
+      let output = `HINT (${this.state.hintsUsed}/${this.currentLevel.hints.length}):\n${hint}`;
+
+      if (this.state.difficulty === 'easy') {
+        output += `\n\nAvailable commands: ${this.currentLevel.allowedCommands.join(', ')}`;
+      }
+
+      if (remaining > 0) {
+        output += `\n\nHints remaining: ${remaining}`;
+      } else {
+        output += `\n\nNo more hints available!`;
+      }
+
+      return output;
+    }
+
+    // Fall back to old single hint behavior
     if (this.state.difficulty === 'easy') {
       return `HINT: ${this.currentLevel.hint}\n\nTry these commands: ${this.currentLevel.allowedCommands.join(', ')}\n\nProgress: ${this.state.exfiltratedFiles.length} files downloaded`;
     }
     return `HINT: ${this.currentLevel.hint}`;
+  }
+
+  private markStepCompleted(step: string): void {
+    if (!this.state.completedSteps.includes(step)) {
+      this.state.completedSteps.push(step);
+    }
   }
 
   cleanup(): void {
