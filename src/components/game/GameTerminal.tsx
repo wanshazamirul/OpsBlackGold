@@ -266,27 +266,35 @@ export const GameTerminal: React.FC<GameTerminalProps> = ({ difficulty, onRestar
             if (!gameEngine) return;
             const levelComplete = gameEngine.getCurrentLevel().completionRequirements.length > 0;
             if (levelComplete) {
-              setLevelStatus('complete');
+              // Pause timer immediately so player can see terminal output
+              gameEngine.pauseTimer();
+              setIsPaused(true);
 
+              // Wait 3 seconds to let player see terminal output, then show complete overlay
               setTimeout(() => {
-                if (gameEngine) {
-                  gameEngine.advanceLevel();
-                  const newLevel = gameEngine.getCurrentLevel();
-                  setLevelStatus('playing');
-                  setTimeRemaining(newLevel.timeLimit);
-                  setTotalTime(newLevel.timeLimit);
-                  setIsPaused(false);
-                  gameEngine.startTimer();
-                  setOutput([
-                    `LEVEL ${newLevel.id}: ${newLevel.title}`,
-                    '',
-                    `> ${newLevel.objective}`,
-                    '',
-                    `TIME LIMIT: ${Math.floor(newLevel.timeLimit / 60)}:${(newLevel.timeLimit % 60).toString().padStart(2, '0')}`,
-                    '',
-                    'Type "help" for available commands.',
-                  ]);
-                }
+                setLevelStatus('complete');
+
+                // After showing overlay for 2 seconds, advance to next level
+                setTimeout(() => {
+                  if (gameEngine) {
+                    gameEngine.advanceLevel();
+                    const newLevel = gameEngine.getCurrentLevel();
+                    setLevelStatus('playing');
+                    setTimeRemaining(newLevel.timeLimit);
+                    setTotalTime(newLevel.timeLimit);
+                    setIsPaused(false);
+                    gameEngine.startTimer();
+                    setOutput([
+                      `LEVEL ${newLevel.id}: ${newLevel.title}`,
+                      '',
+                      `> ${newLevel.objective}`,
+                      '',
+                      `TIME LIMIT: ${Math.floor(newLevel.timeLimit / 60)}:${(newLevel.timeLimit % 60).toString().padStart(2, '0')}`,
+                      '',
+                      'Type "help" for available commands.',
+                    ]);
+                  }
+                }, 2000);
               }, 3000);
             }
           }, 1500);
@@ -296,27 +304,37 @@ export const GameTerminal: React.FC<GameTerminalProps> = ({ difficulty, onRestar
 
     // Check if level complete (for non-download commands)
     if (result.nextLevel && !result.isDownloading) {
-      setLevelStatus('complete');
+      // Pause timer immediately so player can read terminal output
+      if (gameEngine) {
+        gameEngine.pauseTimer();
+      }
+      setIsPaused(true);
 
+      // Wait 3 seconds to let player see terminal output, then show complete overlay
       setTimeout(() => {
-        if (gameEngine) {
-          gameEngine.advanceLevel();
-          const newLevel = gameEngine.getCurrentLevel();
-          setLevelStatus('playing');
-          setTimeRemaining(newLevel.timeLimit);
-          setTotalTime(newLevel.timeLimit);
-          setIsPaused(false); // Clear paused state
-          gameEngine.startTimer(); // Restart timer for new level
-          setOutput([
-            `LEVEL ${newLevel.id}: ${newLevel.title}`,
-            '',
-            `> ${newLevel.objective}`,
-            '',
-            `TIME LIMIT: ${Math.floor(newLevel.timeLimit / 60)}:${(newLevel.timeLimit % 60).toString().padStart(2, '0')}`,
-            '',
-            'Type "help" for available commands.',
-          ]);
-        }
+        setLevelStatus('complete');
+
+        // After showing overlay for 2 seconds, advance to next level
+        setTimeout(() => {
+          if (gameEngine) {
+            gameEngine.advanceLevel();
+            const newLevel = gameEngine.getCurrentLevel();
+            setLevelStatus('playing');
+            setTimeRemaining(newLevel.timeLimit);
+            setTotalTime(newLevel.timeLimit);
+            setIsPaused(false);
+            gameEngine.startTimer();
+            setOutput([
+              `LEVEL ${newLevel.id}: ${newLevel.title}`,
+              '',
+              `> ${newLevel.objective}`,
+              '',
+              `TIME LIMIT: ${Math.floor(newLevel.timeLimit / 60)}:${(newLevel.timeLimit % 60).toString().padStart(2, '0')}`,
+              '',
+              'Type "help" for available commands.',
+            ]);
+          }
+        }, 2000);
       }, 3000);
     }
 
