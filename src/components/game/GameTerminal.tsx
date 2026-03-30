@@ -443,15 +443,12 @@ export const GameTerminal: React.FC<GameTerminalProps> = ({ difficulty, onRestar
           onClick={() => inputRef.current?.focus()}
         >
           {output.map((line, index) => (
-            <motion.div
+            <div
               key={index}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.1 }}
               className="whitespace-pre-wrap break-words"
             >
               {line}
-            </motion.div>
+            </div>
           ))}
 
           {/* Inline input - appears at cursor position */}
