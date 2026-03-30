@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Terminal } from '@/components/terminal/Terminal';
-import { CommandInput } from '@/components/terminal/CommandInput';
 import { DocumentViewer } from '@/components/game/DocumentViewer';
 import { Timer } from '@/components/game/Timer';
 import { GameEngine } from '@/lib/game-engine';
@@ -29,6 +28,7 @@ interface GameTerminalProps {
 export const GameTerminal: React.FC<GameTerminalProps> = ({ difficulty, onRestart }) => {
   const [gameEngine, setGameEngine] = useState<GameEngine | null>(null);
   const [output, setOutput] = useState<string[]>([]);
+  const [input, setInput] = useState('');
   const [levelStatus, setLevelStatus] = useState<'playing' | 'complete' | 'gameover' | 'timeup'>('playing');
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const [totalTime, setTotalTime] = useState<number>(0);
@@ -44,12 +44,21 @@ export const GameTerminal: React.FC<GameTerminalProps> = ({ difficulty, onRestar
   });
 
   const outputRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const progressLineIndexRef = useRef<number | null>(null);
 
   // Format terminal prompt for output
   const formatPrompt = (directory: string) => {
     const dir = directory || '~';
     return `agent@ops-black-gold:${dir}$`;
+  };
+
+  // Handle keyboard input
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && input.trim()) {
+      handleCommand(input.trim());
+      setInput('');
+    }
   };
 
   // Initialize game
@@ -106,7 +115,14 @@ export const GameTerminal: React.FC<GameTerminalProps> = ({ difficulty, onRestar
     if (outputRef.current && !documentViewer.isOpen) {
       outputRef.current.scrollTop = outputRef.current.scrollHeight;
     }
-  }, [output, documentViewer.isOpen]);
+  }, [output, documentViewer.isOpen, input]);
+
+  // Keep focus on input when playing
+  useEffect(() => {
+    if (levelStatus === 'playing' && !documentViewer.isOpen) {
+      inputRef.current?.focus();
+    }
+  }, [levelStatus, documentViewer.isOpen, output]);
 
   const handleOpenDocument = useCallback((filename: string, content: string) => {
     setDocumentViewer({
@@ -422,7 +438,10 @@ export const GameTerminal: React.FC<GameTerminalProps> = ({ difficulty, onRestar
         </div>
 
         {/* Terminal Output */}
-        <div className="flex-1 overflow-y-auto p-2 sm:p-4 font-mono text-green-400 text-xs sm:text-sm md:text-base">
+        <div
+          className="flex-1 overflow-y-auto p-2 sm:p-4 font-mono text-green-400 text-xs sm:text-sm md:text-base"
+          onClick={() => inputRef.current?.focus()}
+        >
           {output.map((line, index) => (
             <motion.div
               key={index}
@@ -434,6 +453,27 @@ export const GameTerminal: React.FC<GameTerminalProps> = ({ difficulty, onRestar
               {line}
             </motion.div>
           ))}
+
+          {/* Inline input - appears at cursor position */}
+          <div className="flex items-center gap-1 sm:gap-2 mt-1">
+            <span className="whitespace-nowrap">
+              {formatPrompt(gameEngine?.getCurrentDirectory() || '')}
+            </span>
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={levelStatus !== 'playing'}
+              className="flex-1 bg-transparent border-none outline-none text-green-400 disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ caretColor: '#00ff00' }}
+              autoComplete="off"
+              spellCheck={false}
+              autoFocus
+            />
+          </div>
+
           <div ref={outputRef} />
         </div>
 
@@ -457,15 +497,6 @@ export const GameTerminal: React.FC<GameTerminalProps> = ({ difficulty, onRestar
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Input - Will move above keyboard on mobile */}
-        <div className="border-t border-green-500/30 p-4 sticky bottom-0 bg-black">
-          <CommandInput
-            onCommand={handleCommand}
-            disabled={levelStatus !== 'playing'}
-            currentDirectory={gameEngine?.getCurrentDirectory()}
-          />
-        </div>
       </div>
 
       {/* Document Viewer Modal */}
