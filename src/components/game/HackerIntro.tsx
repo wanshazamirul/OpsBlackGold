@@ -351,7 +351,7 @@ export const HackerIntro: React.FC<HackerIntroProps> = ({ onComplete }) => {
         {/* Phase 4: Decryption */}
         {phase === 'decrypt' && (
           <div className="text-xs sm:text-sm space-y-1">
-            <div className="text-green-600 mb-4">
+            <div className="text-green-600 mb-4 whitespace-pre-wrap">
               {bootLines.join('\n')}
               {'\n'}
               {connectionStatus}
@@ -371,7 +371,7 @@ export const HackerIntro: React.FC<HackerIntroProps> = ({ onComplete }) => {
         {/* Phase 5: Briefing */}
         {phase === 'briefing' && (
           <div className="text-xs sm:text-sm space-y-1 overflow-y-auto max-h-[60vh]">
-            <div className="text-green-600 mb-4">
+            <div className="text-green-600 mb-4 whitespace-pre-wrap">
               {bootLines.join('\n')}
               {'\n'}
               {connectionStatus}
@@ -404,7 +404,7 @@ export const HackerIntro: React.FC<HackerIntroProps> = ({ onComplete }) => {
         {/* Phase 6: Difficulty Selection */}
         {phase === 'difficulty' && (
           <div className="text-xs sm:text-sm space-y-4">
-            <div className="text-green-600 mb-4">
+            <div className="text-green-600 mb-4 whitespace-pre-wrap">
               {bootLines.join('\n')}
               {'\n'}
               {connectionStatus}
@@ -416,7 +416,18 @@ export const HackerIntro: React.FC<HackerIntroProps> = ({ onComplete }) => {
 
             <div className="mb-6">
               {briefingText.map((line, i) => (
-                <div key={i}>{line}</div>
+                <div
+                  key={i}
+                  className={
+                    line?.includes('Agent,') ? 'text-yellow-400 mt-4' :
+                    line?.includes('- Nemesis') ? 'text-yellow-400' :
+                    line?.includes('$2.3 TRILLION') ? 'text-red-400 font-bold' :
+                    line?.includes('OPERATION BLACK GOLD') ? 'text-red-400 font-bold' :
+                    ''
+                  }
+                >
+                  {line || ''}
+                </div>
               ))}
             </div>
 

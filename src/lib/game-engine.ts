@@ -496,7 +496,8 @@ export class GameEngine {
   }
 
   private simulateClear(): string {
-    return ''; // Clear handled by UI
+    // Return signal to clear terminal
+    return '__CLEAR_TERMINAL__';
   }
 
   private simulateCat(args: string[]): string {

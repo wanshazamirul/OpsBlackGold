@@ -313,6 +313,22 @@ export const GameTerminal: React.FC<GameTerminalProps> = ({ difficulty, onRestar
     // Process command
     const result = gameEngine.processCommand(input);
 
+    // Check for clear command
+    if (result.message === '__CLEAR_TERMINAL__') {
+      // Clear output but keep the initial level message
+      const level = gameEngine.getCurrentLevel();
+      setOutput([
+        `LEVEL ${level.id}: ${level.title}`,
+        '',
+        `> ${level.objective}`,
+        '',
+        `TIME LIMIT: ${Math.floor(level.timeLimit / 60)}:${(level.timeLimit % 60).toString().padStart(2, '0')}`,
+        '',
+        'Type "help" for available commands.',
+      ]);
+      return;
+    }
+
     // Add result to output
     setOutput(prev => [...prev, result.message]);
 
