@@ -277,9 +277,9 @@ export const HackerIntro: React.FC<HackerIntroProps> = ({ onComplete }) => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.05 }}
-                className={line.includes('[ OK ]') ? 'text-green-300' : ''}
+                className={line?.includes('[ OK ]') ? 'text-green-300' : ''}
               >
-                {line}
+                {line || ''}
               </motion.div>
             ))}
           </div>
@@ -361,9 +361,9 @@ export const HackerIntro: React.FC<HackerIntroProps> = ({ onComplete }) => {
                 key={i}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className={line.includes('DECRYPTION COMPLETE') ? 'text-green-300' : ''}
+                className={line?.includes('DECRYPTION COMPLETE') ? 'text-green-300' : ''}
               >
-                {line}
+                {line || ''}
               </motion.div>
             ))}
           </div>
@@ -389,14 +389,14 @@ export const HackerIntro: React.FC<HackerIntroProps> = ({ onComplete }) => {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.05 }}
                 className={
-                  line.includes('Agent,') ? 'text-yellow-400 mt-4' :
-                  line.includes('- Nemesis') ? 'text-yellow-400' :
-                  line.includes('$2.3 TRILLION') ? 'text-red-400 font-bold' :
-                  line.includes('OPERATION BLACK GOLD') ? 'text-red-400 font-bold' :
+                  line?.includes('Agent,') ? 'text-yellow-400 mt-4' :
+                  line?.includes('- Nemesis') ? 'text-yellow-400' :
+                  line?.includes('$2.3 TRILLION') ? 'text-red-400 font-bold' :
+                  line?.includes('OPERATION BLACK GOLD') ? 'text-red-400 font-bold' :
                   ''
                 }
               >
-                {line}
+                {line || ''}
               </motion.div>
             ))}
           </div>
