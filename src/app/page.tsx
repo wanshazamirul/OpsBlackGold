@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { SplashScreen } from '@/components/game/SplashScreen';
+import { HackerIntro } from '@/components/game/HackerIntro';
 import { GameTerminal } from '@/components/game/GameTerminal';
 import { Difficulty } from '@/types/game';
 
@@ -20,7 +20,7 @@ export default function Home() {
   };
 
   if (!gameStarted || !difficulty) {
-    return <SplashScreen onStart={handleStart} />;
+    return <HackerIntro onComplete={handleStart} />;
   }
 
   return <GameTerminal difficulty={difficulty} onRestart={handleRestart} />;
