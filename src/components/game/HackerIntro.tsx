@@ -9,7 +9,8 @@ interface HackerIntroProps {
 }
 
 export const HackerIntro: React.FC<HackerIntroProps> = ({ onComplete }) => {
-  const [phase, setPhase] = useState<'boot' | 'connection' | 'auth' | 'decrypt' | 'briefing' | 'difficulty'>('boot');
+  const [phase, setPhase] = useState<'boot' | 'connection' | 'auth' | 'decrypt' | 'briefing' | 'difficulty' | 'error'>('boot');
+  const [error, setError] = useState('');
   const [bootLines, setBootLines] = useState<string[]>([]);
   const [connectionStatus, setConnectionStatus] = useState('');
   const [authPassword, setAuthPassword] = useState('');
@@ -18,6 +19,18 @@ export const HackerIntro: React.FC<HackerIntroProps> = ({ onComplete }) => {
   const [briefingText, setBriefingText] = useState<string[]>([]);
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty | null>(null);
   const [glitchActive, setGlitchActive] = useState(false);
+
+  // Global error handler
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      console.error('Intro error:', event.error);
+      setPhase('error');
+      setError(event.error?.message || 'Unknown error occurred');
+    };
+
+    window.addEventListener('error', handleError);
+    return () => window.removeEventListener('error', handleError);
+  }, []);
 
   // Phase 1: Boot Sequence
   useEffect(() => {
@@ -38,17 +51,31 @@ export const HackerIntro: React.FC<HackerIntroProps> = ({ onComplete }) => {
     ];
 
     let lineIndex = 0;
+    let mounted = true;
+
     const bootInterval = setInterval(() => {
+      if (!mounted) {
+        clearInterval(bootInterval);
+        return;
+      }
+
       if (lineIndex < bootSequence.length) {
         setBootLines(prev => [...prev, bootSequence[lineIndex]]);
         lineIndex++;
       } else {
         clearInterval(bootInterval);
-        setTimeout(() => setPhase('connection'), 500);
+        if (mounted) {
+          setTimeout(() => {
+            if (mounted) setPhase('connection');
+          }, 500);
+        }
       }
     }, 150);
 
-    return () => clearInterval(bootInterval);
+    return () => {
+      mounted = false;
+      clearInterval(bootInterval);
+    };
   }, [phase]);
 
   // Phase 2: Connection Sequence
@@ -73,17 +100,31 @@ export const HackerIntro: React.FC<HackerIntroProps> = ({ onComplete }) => {
     ];
 
     let stepIndex = 0;
+    let mounted = true;
+
     const connectionInterval = setInterval(() => {
+      if (!mounted) {
+        clearInterval(connectionInterval);
+        return;
+      }
+
       if (stepIndex < connectionSteps.length) {
         setConnectionStatus(connectionSteps[stepIndex]);
         stepIndex++;
       } else {
         clearInterval(connectionInterval);
-        setTimeout(() => setPhase('auth'), 1000);
+        if (mounted) {
+          setTimeout(() => {
+            if (mounted) setPhase('auth');
+          }, 1000);
+        }
       }
     }, 200);
 
-    return () => clearInterval(connectionInterval);
+    return () => {
+      mounted = false;
+      clearInterval(connectionInterval);
+    };
   }, [phase]);
 
   // Phase 3: Authentication
@@ -119,17 +160,31 @@ export const HackerIntro: React.FC<HackerIntroProps> = ({ onComplete }) => {
     ];
 
     let decryptIndex = 0;
+    let mounted = true;
+
     const decryptInterval = setInterval(() => {
+      if (!mounted) {
+        clearInterval(decryptInterval);
+        return;
+      }
+
       if (decryptIndex < encryptedBriefing.length) {
         setDecryptedText(prev => [...prev, encryptedBriefing[decryptIndex]]);
         decryptIndex++;
       } else {
         clearInterval(decryptInterval);
-        setTimeout(() => setPhase('briefing'), 800);
+        if (mounted) {
+          setTimeout(() => {
+            if (mounted) setPhase('briefing');
+          }, 800);
+        }
       }
     }, 180);
 
-    return () => clearInterval(decryptInterval);
+    return () => {
+      mounted = false;
+      clearInterval(decryptInterval);
+    };
   }, [phase]);
 
   // Phase 5: Briefing
@@ -165,17 +220,31 @@ export const HackerIntro: React.FC<HackerIntroProps> = ({ onComplete }) => {
     ];
 
     let briefingIndex = 0;
+    let mounted = true;
+
     const briefingInterval = setInterval(() => {
+      if (!mounted) {
+        clearInterval(briefingInterval);
+        return;
+      }
+
       if (briefingIndex < briefing.length) {
         setBriefingText(prev => [...prev, briefing[briefingIndex]]);
         briefingIndex++;
       } else {
         clearInterval(briefingInterval);
-        setTimeout(() => setPhase('difficulty'), 500);
+        if (mounted) {
+          setTimeout(() => {
+            if (mounted) setPhase('difficulty');
+          }, 500);
+        }
       }
     }, 100);
 
-    return () => clearInterval(briefingInterval);
+    return () => {
+      mounted = false;
+      clearInterval(briefingInterval);
+    };
   }, [phase]);
 
   // Phase 6: Difficulty Selection
@@ -383,6 +452,26 @@ export const HackerIntro: React.FC<HackerIntroProps> = ({ onComplete }) => {
                 <div className="text-center">&gt; EASY: Hints available, commands explained</div>
                 <div className="text-center">&gt; NORMAL: Minimal hints, authentic challenge</div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Error State */}
+        {phase === 'error' && (
+          <div className="text-xs sm:text-sm space-y-4">
+            <div className="text-red-400 text-center mb-4">
+              ⚠️ CRITICAL ERROR
+            </div>
+            <div className="text-red-300 text-center mb-4">
+              {error}
+            </div>
+            <div className="text-center">
+              <button
+                onClick={() => window.location.reload()}
+                className="px-6 py-2 border border-red-500 text-red-400 hover:bg-red-500/20"
+              >
+                [ RELOAD ]
+              </button>
             </div>
           </div>
         )}
