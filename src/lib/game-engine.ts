@@ -15,9 +15,12 @@ export class GameEngine {
   private decryptedFiles: string[] = [];
   private createdFilesWithContent: Map<string, string> = new Map();
   private satctlOverrideExecuted = false;
+  private satctlAuthCodeFound = false;
   private sqliteCommandsExecuted: string[] = [];
+  private sqlModificationCommandsExecuted: string[] = [];
   private uploadsCompleted: string[] = [];
   private emailLoginSuccessful = false;
+  private decryptionKeyFound = false;
 
   constructor(difficulty: Difficulty, onTimerUpdate?: (timeRemaining: number) => void, onTimeUp?: () => void) {
     this.state = {
@@ -56,9 +59,12 @@ export class GameEngine {
     this.decryptedFiles = [];
     this.createdFilesWithContent.clear();
     this.satctlOverrideExecuted = false;
+    this.satctlAuthCodeFound = false;
     this.sqliteCommandsExecuted = [];
+    this.sqlModificationCommandsExecuted = [];
     this.uploadsCompleted = [];
     this.emailLoginSuccessful = false;
+    this.decryptionKeyFound = false;
 
     // Set initial password for level 2
     if (this.currentLevel.id === 2) {
@@ -201,6 +207,14 @@ export class GameEngine {
     if (fs[cleanName]) {
       const content = fs[cleanName];
       if (typeof content === 'string') {
+        // Track if user reads the decryption key (Level 5)
+        if (cleanName === 'etc/asterisk_key.txt') {
+          this.decryptionKeyFound = true;
+        }
+        // Track if user reads the satellite auth code (Level 7)
+        if (cleanName === 'etc/sat.conf' || content.includes('BLACKGOLD-2026')) {
+          this.satctlAuthCodeFound = true;
+        }
         return { content, found: true };
       } else if (Array.isArray(content)) {
         return { content: content.join('\n'), found: true };
@@ -394,6 +408,15 @@ export class GameEngine {
     }
 
     return results.join('\n');
+  }
+
+  // Check if grep found specific backdoor indicators for Level 4
+  private grepFoundBackdoor(): boolean {
+    return this.grepResults.some(line =>
+      line.toLowerCase().includes('backdoor') ||
+      line.toLowerCase().includes('31337') ||
+      line.toLowerCase().includes('port')
+    );
   }
 
   private simulateEcho(content: string, filename?: string): string {
@@ -627,6 +650,23 @@ export class GameEngine {
     }
 
     return `SQLite database: ${dbname}\n\nTables:\n- manifests\n- tankers\n- routes\n\nType .help for SQLite help\nType your SQL queries followed by ;\n\nHint: Try UPDATE manifests SET status="delayed";`;
+  }
+
+  private simulateSqlCommand(command: string): string {
+    // Track SQL modification commands for Level 8
+    const upperCommand = command.toUpperCase();
+    if (upperCommand.startsWith('UPDATE') ||
+        upperCommand.startsWith('DELETE') ||
+        upperCommand.startsWith('INSERT') ||
+        upperCommand.startsWith('ALTER') ||
+        upperCommand.startsWith('DROP')) {
+      if (!this.sqlModificationCommandsExecuted.includes(command)) {
+        this.sqlModificationCommandsExecuted.push(command);
+      }
+      return `SQL command executed: ${command}\n\nRows affected: 1`;
+    }
+
+    return `SQL command executed: ${command}\n\nQuery returned results.`;
   }
 
   private simulateSudo(command: string): string {
@@ -916,6 +956,14 @@ export class GameEngine {
         case 'sqlite':
           output = this.simulateSqlite(args);
           break;
+        case 'update':
+        case 'delete':
+        case 'insert':
+        case 'alter':
+        case 'drop':
+          // SQL commands can be typed directly
+          output = this.simulateSqlCommand(input);
+          break;
         case 'sudo':
           if (args.length === 0) {
             output = 'Usage: sudo <command>';
@@ -992,13 +1040,18 @@ export class GameEngine {
         return this.state.passwordChanged;
 
       case 'file_creation':
-        // Level 6: Check if file was created
+        // Level 6: Check if file was created with correct content
         const targetFile = requirement.target as string;
-        // Check if file exists in the filesystem (created via echo or touch)
-        return this.currentLevel.fileSystem[targetFile] !== undefined ||
-               this.commandHistory.some(cmd =>
-                 cmd.startsWith('touch') && cmd.includes(targetFile)
-               );
+        if (this.createdFilesWithContent.has(targetFile)) {
+          const content = this.createdFilesWithContent.get(targetFile);
+          // Verify content contains key evidence terms
+          return (content?.includes('FALSE FLAG') ||
+                  content?.includes('STRATCOM') ||
+                  content?.includes('Blackwater') ||
+                  content?.includes('Operation Hormuz')) ?? false;
+        }
+        // Fallback: check if file exists
+        return this.currentLevel.fileSystem[targetFile] !== undefined;
 
       case 'command_execution':
         const cmdTarget = requirement.target as string;
@@ -1008,19 +1061,19 @@ export class GameEngine {
           return this.emailLoginSuccessful;
         }
 
-        // Level 4: Verify grep actually found something useful
+        // Level 4: Verify grep found the backdoor (not just anything)
         if (cmdTarget === 'grep') {
-          return this.grepResults.length > 0;
+          return this.grepFoundBackdoor();
         }
 
-        // Level 7: Verify satctl override was executed
+        // Level 7: Verify satctl override was executed AND auth code was found
         if (cmdTarget === 'satctl') {
-          return this.satctlOverrideExecuted;
+          return this.satctlAuthCodeFound && this.satctlOverrideExecuted;
         }
 
-        // Level 8: Verify SQLite command was executed
+        // Level 8: Verify SQLite was opened AND modification commands were executed
         if (cmdTarget === 'sqlite') {
-          return this.sqliteCommandsExecuted.length > 0;
+          return this.sqliteCommandsExecuted.length > 0 && this.sqlModificationCommandsExecuted.length > 0;
         }
 
         // General fallback: check command was executed
@@ -1038,9 +1091,9 @@ export class GameEngine {
         return this.uploadsCompleted.some(u => u.includes(requirement.target as string));
 
       case 'decrypt':
-        // Level 5: Verify base64 decoded the SPECIFIC target file
+        // Level 5: Verify base64 decoded the SPECIFIC target file AND key was found
         const decryptTarget = requirement.target as string;
-        return this.decryptedFiles.includes(decryptTarget);
+        return this.decryptionKeyFound && this.decryptedFiles.includes(decryptTarget);
 
       default:
         return false;
