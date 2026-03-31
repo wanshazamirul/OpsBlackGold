@@ -118,7 +118,12 @@ export const GAME_LEVELS: Level[] = [
     id: 5,
     title: 'LEVEL 5: DECRYPT FILES',
     objective: 'Crack the encryption on Iranian war plans and expose the truth.',
-    hint: 'Look for encryption keys. They might be hidden in system files or logs. Use `base64 -d` to decode encrypted files.',
+    hint: 'Find the decryption key in the system files first. Read the key file, then use `base64 -d` to decode the encrypted file.',
+    hints: [
+      'Search for the decryption key. Check etc/ and var/log/ for clues.',
+      'Read the key file: `cat etc/asterisk_key.txt` to find the decryption method.',
+      'Once you\'ve found the key, decode the file: `base64 -d encrypted/war_plans.enc`'
+    ],
     allowedCommands: ['ls', 'cat', 'cd', 'pwd', 'help', 'clear', 'grep', 'find', 'strings', 'base64', 'download', 'exfil'],
     expectedCommands: ['grep', 'strings', 'cat', 'base64'],
     completionRequirements: [
@@ -143,7 +148,12 @@ export const GAME_LEVELS: Level[] = [
     id: 6,
     title: 'LEVEL 6: NETWORK INTRUSION',
     objective: 'Plant evidence of false flag operation in government systems.',
-    hint: 'Navigate the file system and find where to plant the evidence. Use `echo "content" > file` to create files.',
+    hint: 'Read the evidence file first, then plant it in the classified folder. Use `cat` to read, `echo` to write.',
+    hints: [
+      'Navigate to tmp/ and read the evidence file: `cat tmp/evidence.txt`',
+      'Copy the evidence content and create the file in public/classified/',
+      'Use: `echo "STRATCOM FALSE FLAG OPERATION..." > public/classified/false_flag.txt`'
+    ],
     allowedCommands: ['ls', 'cat', 'cd', 'pwd', 'help', 'clear', 'echo', 'mkdir', 'touch'],
     expectedCommands: ['cd', 'echo', 'touch'],
     completionRequirements: [
@@ -170,7 +180,12 @@ export const GAME_LEVELS: Level[] = [
     id: 7,
     title: 'LEVEL 7: SYSTEM OVERRIDE',
     objective: 'Hijack satellite communications to broadcast the truth globally.',
-    hint: 'Find the satellite control system. Use satctl to control the satellite. Execute the override.',
+    hint: 'Find the auth code in the satellite config first. Then use satctl with --override to hijack the broadcast.',
+    hints: [
+      'Explore the etc/ directory to find satellite configuration files.',
+      'Read the config: `cat etc/sat.conf` to find the auth code.',
+      'Execute the override: `satctl --override` (you must have read the auth code first)'
+    ],
     allowedCommands: ['ls', 'cat', 'cd', 'pwd', 'help', 'clear', 'grep', 'find', 'chmod', 'chown', 'satctl'],
     expectedCommands: ['find', 'cat', 'chmod'],
     completionRequirements: [
@@ -193,8 +208,13 @@ export const GAME_LEVELS: Level[] = [
     id: 8,
     title: 'LEVEL 8: DATABASE INJECTION',
     objective: 'Alter oil shipment manifests to confuse their tracking systems.',
-    hint: 'Access the database. Use `sqlite` to access. Execute UPDATE statements to modify records.',
-    allowedCommands: ['ls', 'cat', 'cd', 'pwd', 'help', 'clear', 'grep', 'sqlite'],
+    hint: 'Access the database with sqlite, then execute UPDATE/DELETE commands to modify records.',
+    hints: [
+      'Open the database: `sqlite db/shipments.db`',
+      'Execute modification commands like: `UPDATE manifests SET status="delayed";`',
+      'You can also use: `DELETE FROM routes WHERE id<5;` to remove records.'
+    ],
+    allowedCommands: ['ls', 'cat', 'cd', 'pwd', 'help', 'clear', 'grep', 'sqlite', 'update', 'delete', 'insert', 'alter', 'drop'],
     expectedCommands: ['sqlite', 'ls'],
     completionRequirements: [
       { type: 'command_execution', target: 'sqlite' }
