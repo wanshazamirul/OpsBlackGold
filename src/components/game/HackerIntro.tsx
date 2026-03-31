@@ -307,7 +307,7 @@ export const HackerIntro: React.FC<HackerIntroProps> = ({ onComplete }) => {
         {/* Phase 3: Authentication */}
         {phase === 'auth' && (
           <div className="text-xs sm:text-sm space-y-4">
-            <div className="text-green-600">
+            <div className="text-green-600 whitespace-pre-wrap">
               {bootLines.join('\n')}
               {'\n'}
               {connectionStatus}
@@ -377,7 +377,7 @@ export const HackerIntro: React.FC<HackerIntroProps> = ({ onComplete }) => {
               {connectionStatus}
             </div>
 
-            <div className="text-green-600 mb-4">
+            <div className="text-green-600 mb-4 whitespace-pre-wrap">
               {decryptProgress}
             </div>
 
@@ -410,7 +410,7 @@ export const HackerIntro: React.FC<HackerIntroProps> = ({ onComplete }) => {
               {connectionStatus}
             </div>
 
-            <div className="text-green-600 mb-4">
+            <div className="text-green-600 mb-4 whitespace-pre-wrap">
               {decryptProgress}
             </div>
 
