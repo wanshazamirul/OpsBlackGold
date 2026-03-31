@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Terminal } from '@/components/terminal/Terminal';
 import { DocumentViewer } from '@/components/game/DocumentViewer';
+import { EmailLoginModal } from '@/components/game/EmailLoginModal';
 import { Timer } from '@/components/game/Timer';
 import { GameEngine } from '@/lib/game-engine';
 import { GameState, Difficulty } from '@/types/game';
@@ -43,6 +44,14 @@ export const GameTerminal: React.FC<GameTerminalProps> = ({ difficulty, onRestar
     isOpen: false,
     filename: '',
     content: '',
+  });
+
+  const [emailLoginModal, setEmailLoginModal] = useState<{
+    isOpen: boolean;
+    correctPassword: string;
+  }>({
+    isOpen: false,
+    correctPassword: '',
   });
 
   const [showObjective, setShowObjective] = useState(true);
@@ -165,6 +174,107 @@ export const GameTerminal: React.FC<GameTerminalProps> = ({ difficulty, onRestar
     });
   }, []);
 
+  const handleOpenEmailLogin = useCallback(() => {
+    if (!gameEngine) return;
+
+    // Get the CEO password from the file system
+    const level = gameEngine.getCurrentLevel();
+    const passwordFile = level.fileSystem['backups/ceo_password.txt'];
+
+    // Extract password from file content
+    let correctPassword = '';
+    if (typeof passwordFile === 'string') {
+      const match = passwordFile.match(/PASSWORD: "([^"]+)"/);
+      if (match) {
+        correctPassword = match[1];
+      }
+    }
+
+    setEmailLoginModal({
+      isOpen: true,
+      correctPassword,
+    });
+
+    // Add command to output
+    const prompt = formatPrompt(gameEngine.getCurrentDirectory());
+    setOutput(prev => [...prev, `${prompt} ./email_client`, 'Launching CEO email client...']);
+  }, [gameEngine]);
+
+  const handleCloseEmailLogin = useCallback(() => {
+    setEmailLoginModal({
+      isOpen: false,
+      correctPassword: '',
+    });
+  }, []);
+
+  const handleEmailLoginSuccess = useCallback(() => {
+    if (!gameEngine) return;
+
+    // Mark email login as successful in game engine
+    gameEngine.setEmailLoginSuccessful();
+
+    // Close modal
+    setEmailLoginModal({
+      isOpen: false,
+      correctPassword: '',
+    });
+
+    // Add success message to output
+    setOutput(prev => [
+      ...prev,
+      '',
+      '✓ Authentication successful!',
+      '',
+      'Welcome, CEO.',
+      'Email access granted.',
+      '',
+      'Inbox (47 messages):',
+      '  [URGENT] From: Nemesis',
+      '  Subject: The plan proceeds',
+      '',
+      '  From: Board of Directors',
+      '  Subject: Q2 Profits Exceed Expectations',
+      '',
+      '  From: oil cartel representatives',
+      '  Subject: Shipment coordinates confirmed',
+      '',
+      'You now have full access to the CEO\'s email account.',
+    ]);
+
+    // Mark level as complete after a delay
+    setTimeout(() => {
+      if (!gameEngine) return;
+
+      gameEngine.pauseTimer();
+      setIsPaused(true);
+
+      setTimeout(() => {
+        setLevelStatus('complete');
+
+        setTimeout(() => {
+          if (gameEngine) {
+            gameEngine.advanceLevel();
+            const newLevel = gameEngine.getCurrentLevel();
+            setLevelStatus('playing');
+            setTimeRemaining(newLevel.timeLimit);
+            setTotalTime(newLevel.timeLimit);
+            setIsPaused(false);
+            gameEngine.startTimer();
+            setOutput([
+              `LEVEL ${newLevel.id}: ${newLevel.title}`,
+              '',
+              `> ${newLevel.objective}`,
+              '',
+              `TIME LIMIT: ${Math.floor(newLevel.timeLimit / 60)}:${(newLevel.timeLimit % 60).toString().padStart(2, '0')}`,
+              '',
+              'Type "help" for available commands.',
+            ]);
+          }
+        }, 2000);
+      }, 3000);
+    }, 1500);
+  }, [gameEngine]);
+
   const handleCommand = (input: string) => {
     if (!gameEngine || levelStatus !== 'playing') return;
 
@@ -172,6 +282,12 @@ export const GameTerminal: React.FC<GameTerminalProps> = ({ difficulty, onRestar
     const parts = input.trim().split(/\s+/);
     const command = parts[0].toLowerCase();
     const args = parts.slice(1);
+
+    // Special handling for email_client command (Level 2)
+    if (command === './email_client' || command === 'email_client') {
+      handleOpenEmailLogin();
+      return;
+    }
 
     // Handle cat command - open document viewer
     if (command === 'cat' && args.length > 0) {
@@ -512,9 +628,7 @@ export const GameTerminal: React.FC<GameTerminalProps> = ({ difficulty, onRestar
                   {/* Level-specific progress indicators */}
                   {gameEngine.getCurrentLevel().id === 2 && (
                     <div className="mt-2 font-mono text-[10px] sm:text-xs text-green-500">
-                      {gameEngine.getGameState().passwordChanged
-                        ? '✓ Password changed - Now login with new password'
-                        : '○ Change password first, then login'}
+                      Find the CEO password in backups/, then run ./email_client
                     </div>
                   )}
                   {gameEngine.getCurrentLevel().id === 10 && (
@@ -610,6 +724,14 @@ export const GameTerminal: React.FC<GameTerminalProps> = ({ difficulty, onRestar
         content={documentViewer.content}
         isOpen={documentViewer.isOpen}
         onClose={handleCloseDocument}
+      />
+
+      {/* Email Login Modal */}
+      <EmailLoginModal
+        isOpen={emailLoginModal.isOpen}
+        correctPassword={emailLoginModal.correctPassword}
+        onSuccess={handleEmailLoginSuccess}
+        onClose={handleCloseEmailLogin}
       />
     </Terminal>
   );

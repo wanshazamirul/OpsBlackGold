@@ -29,30 +29,29 @@ export const GAME_LEVELS: Level[] = [
   {
     id: 2,
     title: 'LEVEL 2: PASSWORD RESET',
-    objective: 'Reset the PetroGlobal CEO\'s email password and access their secret correspondence.',
-    hint: 'Use `cd <directory>` to navigate. Find the password reset utility. Use `passwd <new_password>` to change it, then `login <password>` to verify.',
+    objective: 'Find the CEO\'s email password and access their secret correspondence.',
+    hint: 'Explore the directories to find the CEO\'s password. It\'s stored somewhere in plain text. Then launch the email client to login.',
     hints: [
-      'Explore the directory structure to find the password reset utility. Try looking in the bin/ directory.',
-      'Read the passwd.txt file to learn how to use the password command: `cat bin/passwd.txt`',
-      'Change the password with `passwd <new_password>`, then verify access with `login <new_password>`.'
+      'Start by exploring the directory structure. Use `ls` to see what\'s available.',
+      'Look in the backups/ directory - the CEO often stores passwords there.',
+      'Once you have the password, launch the email client with `./email_client` and enter it.'
     ],
-    allowedCommands: ['ls', 'cat', 'cd', 'pwd', 'help', 'clear', 'grep', 'passwd', 'login'],
+    allowedCommands: ['ls', 'cat', 'cd', 'pwd', 'help', 'clear', 'grep', 'email_client'],
     expectedCommands: ['cd', 'cat'],
     completionRequirements: [
-      { type: 'password_change' },
-      { type: 'command_execution', target: 'login' }
+      { type: 'command_execution', target: 'email_login' }
     ],
     timeLimit: 120, // 2 minutes
     fileSystem: {
-      'readme.txt': 'CEO\'s private server. Find the password reset utility.\n\nCurrent password: BlackGold2026!\n\nMISSION: Change the password and verify you can login.',
+      'readme.txt': 'CEO\'s private server. Access the email client to read secret correspondence.\n\nMISSION: Find the CEO\'s password and launch the email client.',
       'bin/': 'directory',
       'logs/': 'directory',
       'backups/': 'directory',
-      'bin/passwd.txt': 'Password reset utility.\n\nUsage: passwd <new_password>\n\nExample: passwd MySecurePassword123!\n\nAfter changing, use: login <new_password>',
-      'backups/ceo_password.txt': 'SECRET CEO PASSWORD: "BlackGold2026!"\n\nDO NOT SHARE THIS!',
+      'backups/ceo_password.txt': 'SECRET CEO PASSWORD: "BlackGold2026!"\n\nDO NOT SHARE THIS!\n\nStored here for backup purposes only.',
       'logs/access_log.txt': 'Recent logins:\n- CEO (last login: 2 hours ago)\n- IT Admin\n- Unknown IP from Tehran',
+      'bin/email_client': 'CEO Email Client v2.1\n\nUsage: ./email_client\n\nLaunches the secure email terminal.\nRequires CEO password for authentication.',
     },
-    victoryMessage: 'PASSWORD RESET SUCCESSFUL!\nCEO email accessed.\n\nFound email from Nemesis: "The plan proceeds. Stage complete."\n\nNext: You need to extract more classified documents.',
+    victoryMessage: 'EMAIL ACCESS SUCCESSFUL!\nCEO email account breached.\n\nFound email from Nemesis: "The plan proceeds. Stage complete."\n\nNext: You need to extract more classified documents.',
   },
 
   // LEVEL 3: DATA EXFILTRATION

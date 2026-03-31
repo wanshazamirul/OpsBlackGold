@@ -17,6 +17,7 @@ export class GameEngine {
   private satctlOverrideExecuted = false;
   private sqliteCommandsExecuted: string[] = [];
   private uploadsCompleted: string[] = [];
+  private emailLoginSuccessful = false;
 
   constructor(difficulty: Difficulty, onTimerUpdate?: (timeRemaining: number) => void, onTimeUp?: () => void) {
     this.state = {
@@ -57,6 +58,7 @@ export class GameEngine {
     this.satctlOverrideExecuted = false;
     this.sqliteCommandsExecuted = [];
     this.uploadsCompleted = [];
+    this.emailLoginSuccessful = false;
 
     // Set initial password for level 2
     if (this.currentLevel.id === 2) {
@@ -999,25 +1001,30 @@ export class GameEngine {
                );
 
       case 'command_execution':
-        const target = requirement.target as string;
+        const cmdTarget = requirement.target as string;
+
+        // Level 2: Verify email login was successful
+        if (cmdTarget === 'email_login') {
+          return this.emailLoginSuccessful;
+        }
 
         // Level 4: Verify grep actually found something useful
-        if (target === 'grep') {
+        if (cmdTarget === 'grep') {
           return this.grepResults.length > 0;
         }
 
         // Level 7: Verify satctl override was executed
-        if (target === 'satctl') {
+        if (cmdTarget === 'satctl') {
           return this.satctlOverrideExecuted;
         }
 
         // Level 8: Verify SQLite command was executed
-        if (target === 'sqlite') {
+        if (cmdTarget === 'sqlite') {
           return this.sqliteCommandsExecuted.length > 0;
         }
 
         // General fallback: check command was executed
-        return this.commandHistory.some(cmd => cmd.startsWith(target));
+        return this.commandHistory.some(cmd => cmd.startsWith(cmdTarget));
 
       case 'upload':
         // Level 10: Verify uploads to required destinations
@@ -1098,5 +1105,9 @@ export class GameEngine {
 
   cleanup(): void {
     this.stopTimer();
+  }
+
+  setEmailLoginSuccessful(): void {
+    this.emailLoginSuccessful = true;
   }
 }
