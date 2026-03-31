@@ -16,6 +16,7 @@ export const HackerIntro: React.FC<HackerIntroProps> = ({ onComplete }) => {
   const [authPassword, setAuthPassword] = useState('');
   const [authError, setAuthError] = useState('');
   const [decryptedText, setDecryptedText] = useState<string[]>([]);
+  const [decryptProgress, setDecryptProgress] = useState('');
   const [briefingText, setBriefingText] = useState<string[]>([]);
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty | null>(null);
   const [glitchActive, setGlitchActive] = useState(false);
@@ -146,20 +147,20 @@ export const HackerIntro: React.FC<HackerIntroProps> = ({ onComplete }) => {
   useEffect(() => {
     if (phase !== 'decrypt') return;
 
-    const encryptedBriefing = [
-      'Û²³²²²±±±°°°²²²²Û  [ENCRYPTED TRANSMISSION]',
-      'Û²³²²±±±°°°²²²²Û  Decrypting with key: NEMESIS-2026-OMEGA',
-      'Û²³²±±±°°°²²²²Û  Progress: [███░░░░░░░] 30%',
-      'Û²³±±±°°°²²²²²Û  Progress: [██████░░░░░] 60%',
-      'Û²±±±°°°²²²²²²Û  Progress: [█████████░░] 90%',
-      'Û±±±°°°²²²²²²²Û  Progress: [███████████] 100%',
-      '',
-      '✓ DECRYPTION COMPLETE',
-      '',
-      'MESSAGE FROM NEMESIS:',
+    const progressSteps = [
+      { progress: 0, label: 'Û²³²²²±±±°°°²²²²Û  [ENCRYPTED TRANSMISSION]' },
+      { progress: 0, label: 'Û²³²²±±±°°°²²²²Û  Decrypting with key: NEMESIS-2026-OMEGA' },
+      { progress: 30, label: 'Û²³±±±°°°²²²²²Û  Progress: [███░░░░░░░░░░░] 30%' },
+      { progress: 60, label: 'Û²±±±°°°²²²²²²Û  Progress: [██████░░░░░░░░] 60%' },
+      { progress: 90, label: 'Û²±±±°°°²²²²²²²Û  Progress: [█████████░░░░░] 90%' },
+      { progress: 100, label: 'Û²±±±°°°²²²²²²²Û  Progress: [████████████████] 100%' },
+      { progress: 100, label: '' },
+      { progress: 100, label: '✓ DECRYPTION COMPLETE' },
+      { progress: 100, label: '' },
+      { progress: 100, label: 'MESSAGE FROM NEMESIS:' },
     ];
 
-    let decryptIndex = 0;
+    let stepIndex = 0;
     let mounted = true;
 
     const decryptInterval = setInterval(() => {
@@ -168,9 +169,9 @@ export const HackerIntro: React.FC<HackerIntroProps> = ({ onComplete }) => {
         return;
       }
 
-      if (decryptIndex < encryptedBriefing.length) {
-        setDecryptedText(prev => [...prev, encryptedBriefing[decryptIndex]]);
-        decryptIndex++;
+      if (stepIndex < progressSteps.length) {
+        setDecryptProgress(progressSteps[stepIndex].label);
+        stepIndex++;
       } else {
         clearInterval(decryptInterval);
         if (mounted) {
@@ -356,16 +357,14 @@ export const HackerIntro: React.FC<HackerIntroProps> = ({ onComplete }) => {
               {connectionStatus}
             </div>
 
-            {decryptedText.map((line, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className={line?.includes('DECRYPTION COMPLETE') ? 'text-green-300' : ''}
-              >
-                {line || ''}
-              </motion.div>
-            ))}
+            <motion.div
+              key="decrypt-progress"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className={decryptProgress?.includes('DECRYPTION COMPLETE') ? 'text-green-300' : ''}
+            >
+              {decryptProgress || ''}
+            </motion.div>
           </div>
         )}
 
@@ -379,7 +378,7 @@ export const HackerIntro: React.FC<HackerIntroProps> = ({ onComplete }) => {
             </div>
 
             <div className="text-green-600 mb-4">
-              {decryptedText.join('\n')}
+              {decryptProgress}
             </div>
 
             {briefingText.map((line, i) => (
@@ -412,7 +411,7 @@ export const HackerIntro: React.FC<HackerIntroProps> = ({ onComplete }) => {
             </div>
 
             <div className="text-green-600 mb-4">
-              {decryptedText.join('\n')}
+              {decryptProgress}
             </div>
 
             <div className="mb-6">
