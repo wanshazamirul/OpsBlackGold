@@ -45,6 +45,8 @@ export const GameTerminal: React.FC<GameTerminalProps> = ({ difficulty, onRestar
     content: '',
   });
 
+  const [showObjective, setShowObjective] = useState(true);
+
   const outputRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const progressLineIndexRef = useRef<number | null>(null);
@@ -477,6 +479,71 @@ export const GameTerminal: React.FC<GameTerminalProps> = ({ difficulty, onRestar
             </button>
           </div>
         </div>
+
+        {/* Objective Panel - Persistent reminder */}
+        <AnimatePresence>
+          {showObjective && gameEngine && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              className="border-b border-green-500/30 bg-green-950/10 px-3 sm:px-4 py-2 sm:py-3"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <div className="font-mono text-[10px] sm:text-xs text-green-600 mb-1">
+                    CURRENT MISSION OBJECTIVE:
+                  </div>
+                  <div className="font-mono text-xs sm:text-sm text-green-400 leading-tight">
+                    {gameEngine.getCurrentLevel().objective}
+                  </div>
+                  {/* Progress indicator for multi-file levels */}
+                  {gameEngine.getCurrentLevel().id === 3 && (
+                    <div className="mt-2 font-mono text-[10px] sm:text-xs text-green-500">
+                      Progress: {gameEngine.getExfiltratedFiles().length}/3 files downloaded
+                      {gameEngine.getExfiltratedFiles().length > 0 && (
+                        <span className="ml-2 text-green-400">
+                          ({gameEngine.getExfiltratedFiles().join(', ')})
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {/* Level-specific progress indicators */}
+                  {gameEngine.getCurrentLevel().id === 2 && (
+                    <div className="mt-2 font-mono text-[10px] sm:text-xs text-green-500">
+                      {gameEngine.getGameState().passwordChanged
+                        ? '✓ Password changed - Now login with new password'
+                        : '○ Change password first, then login'}
+                    </div>
+                  )}
+                  {gameEngine.getCurrentLevel().id === 10 && (
+                    <div className="mt-2 font-mono text-[10px] sm:text-xs text-green-500">
+                      Upload final evidence to 3 news outlets to complete the mission
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={() => setShowObjective(false)}
+                  className="text-green-600 hover:text-green-400 transition-colors flex-shrink-0"
+                  aria-label="Hide objective"
+                >
+                  ✕
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Show objective button when hidden */}
+        {!showObjective && gameEngine && (
+          <button
+            onClick={() => setShowObjective(true)}
+            className="fixed bottom-4 right-4 z-30 font-mono text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-2 border border-green-500/30 bg-green-950/90 hover:bg-green-500/20 transition-all text-green-400 rounded"
+          >
+            📋 Show Objective
+          </button>
+        )}
 
         {/* Terminal Output */}
         <div

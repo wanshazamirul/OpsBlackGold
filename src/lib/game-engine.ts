@@ -10,6 +10,14 @@ export class GameEngine {
   private onTimeUp?: () => void;
   private downloadProgress: { filename: string; progress: number; speed: string; isComplete: boolean } | null = null;
 
+  // Track actual completion of objectives
+  private grepResults: string[] = [];
+  private decryptedFiles: string[] = [];
+  private createdFilesWithContent: Map<string, string> = new Map();
+  private satctlOverrideExecuted = false;
+  private sqliteCommandsExecuted: string[] = [];
+  private uploadsCompleted: string[] = [];
+
   constructor(difficulty: Difficulty, onTimerUpdate?: (timeRemaining: number) => void, onTimeUp?: () => void) {
     this.state = {
       status: 'playing',
@@ -41,6 +49,14 @@ export class GameEngine {
     this.state.currentDirectory = ''; // Reset to root
     this.state.hintsUsed = 0; // Reset hint counter
     this.state.completedSteps = []; // Reset completed steps
+
+    // Reset objective tracking
+    this.grepResults = [];
+    this.decryptedFiles = [];
+    this.createdFilesWithContent.clear();
+    this.satctlOverrideExecuted = false;
+    this.sqliteCommandsExecuted = [];
+    this.uploadsCompleted = [];
 
     // Set initial password for level 2
     if (this.currentLevel.id === 2) {
@@ -366,6 +382,11 @@ export class GameEngine {
       });
     }
 
+    // Track grep results for validation
+    if (results.length > 0) {
+      this.grepResults = results;
+    }
+
     if (results.length === 0) {
       return `No matches found for pattern: ${pattern}`;
     }
@@ -385,6 +406,9 @@ export class GameEngine {
 
       // Add file to filesystem
       this.currentLevel.fileSystem[fullPath] = content;
+
+      // Track file creation with content for validation (Level 6)
+      this.createdFilesWithContent.set(fullPath, content);
 
       return `File written: ${filename}\n${content}`;
     }
@@ -510,6 +534,12 @@ export class GameEngine {
       return 'Usage: base64 -d <filename> to decode';
     }
 
+    const hasDecodeFlag = args.includes('-d') || args.includes('--decode');
+
+    if (!hasDecodeFlag) {
+      return 'Usage: base64 -d <filename> to decode\nUse -d flag to decode base64 content';
+    }
+
     const filename = args[args.length - 1];
     const fs = this.currentLevel.fileSystem;
     const content = fs[filename.replace(/^\.\//, '')];
@@ -520,6 +550,10 @@ export class GameEngine {
 
     try {
       const decoded = atob(content);
+
+      // Track successful decryption for validation
+      this.decryptedFiles.push(filename.replace(/^\.\//, ''));
+
       return decoded;
     } catch {
       return 'Error: Invalid base64 content';
@@ -584,6 +618,12 @@ export class GameEngine {
     }
 
     const dbname = args[0];
+
+    // Track that sqlite command was executed
+    if (!this.sqliteCommandsExecuted.includes(dbname)) {
+      this.sqliteCommandsExecuted.push(dbname);
+    }
+
     return `SQLite database: ${dbname}\n\nTables:\n- manifests\n- tankers\n- routes\n\nType .help for SQLite help\nType your SQL queries followed by ;\n\nHint: Try UPDATE manifests SET status="delayed";`;
   }
 
@@ -626,6 +666,12 @@ export class GameEngine {
 
     const source = args[0];
     const dest = args[1];
+
+    // Track upload for validation
+    const uploadKey = `${source}→${dest}`;
+    if (!this.uploadsCompleted.includes(uploadKey)) {
+      this.uploadsCompleted.push(uploadKey);
+    }
 
     return `Uploading ${source} to ${dest}...\n\n███████████████████ 100%\n\nUpload complete!\n\nEvidence released to ${dest.toUpperCase()}!\n\nGlobal broadcast initiated...`;
   }
@@ -711,6 +757,15 @@ export class GameEngine {
   private simulateCustomCommand(command: string, args: string[]): CommandResult {
     // Level-specific commands
     if (this.currentLevel.id === 7 && command === 'satctl') {
+      // Check if user is trying to override
+      if (args.includes('--override')) {
+        this.satctlOverrideExecuted = true;
+        return {
+          success: true,
+          message: 'Override initiated...\n\nBroadcast frequency unlocked.\nOverride code: BLACKGOLD-2026\n\nSatellite control transferred to your command.\nReady to broadcast evidence file.',
+        };
+      }
+
       return {
         success: true,
         message: 'Satellite Control Utility\nCommands:\n- --list: List satellites\n- --override: Override broadcast frequency\n- --broadcast: Broadcast message file\n\nCurrent satellite: SAT-1 (Global Coverage)\nFrequency: 101.5 MHz\nStatus: ACTIVE',
@@ -935,25 +990,52 @@ export class GameEngine {
         return this.state.passwordChanged;
 
       case 'file_creation':
-        // Check if specific file was created (tracked via touch command)
+        // Level 6: Check if file was created with correct content
+        const targetFile = requirement.target as string;
+        if (this.createdFilesWithContent.has(targetFile)) {
+          // For Level 6, verify the backdoor.php content includes the necessary code
+          const content = this.createdFilesWithContent.get(targetFile);
+          return (content?.includes('backdoor') || content?.includes('shell_exec') || content?.includes('system')) ?? false;
+        }
+        // Fallback: check if touch command was used
         return this.commandHistory.some(cmd =>
-          cmd.startsWith('touch') && cmd.includes(requirement.target as string)
+          cmd.startsWith('touch') && cmd.includes(targetFile)
         );
 
       case 'command_execution':
-        return this.commandHistory.some(cmd =>
-          cmd.startsWith(requirement.target as string)
-        );
+        const target = requirement.target as string;
+
+        // Level 4: Verify grep actually found something useful
+        if (target === 'grep') {
+          return this.grepResults.length > 0;
+        }
+
+        // Level 7: Verify satctl override was executed
+        if (target === 'satctl') {
+          return this.satctlOverrideExecuted;
+        }
+
+        // Level 8: Verify SQLite command was executed
+        if (target === 'sqlite') {
+          return this.sqliteCommandsExecuted.length > 0;
+        }
+
+        // General fallback: check command was executed
+        return this.commandHistory.some(cmd => cmd.startsWith(target));
 
       case 'upload':
-        return this.commandHistory.some(cmd =>
-          cmd.startsWith('upload') && cmd.includes(requirement.target as string)
-        );
+        // Level 10: Verify uploads to 3 different destinations
+        if (Array.isArray(requirement.target)) {
+          const uniqueDests = new Set(
+            this.uploadsCompleted.map(u => u.split('→')[1])
+          );
+          return uniqueDests.size >= 3;
+        }
+        return this.uploadsCompleted.some(u => u.includes(requirement.target as string));
 
       case 'decrypt':
-        return this.commandHistory.some(cmd =>
-          cmd.startsWith('base64') || cmd.includes('decrypt')
-        );
+        // Level 5: Verify base64 actually decoded a file
+        return this.decryptedFiles.length > 0;
 
       default:
         return false;
