@@ -14,7 +14,7 @@ export const GAME_LEVELS: Level[] = [
     allowedCommands: ['ls', 'cat', 'help', 'pwd', 'clear', 'download', 'exfil'],
     expectedCommands: ['cat', 'ls'],
     completionRequirements: [
-      { type: 'download', target: 'intel_report.txt' }
+      { type: 'download', target: ['intel_report.txt', 'meeting_notes.txt'], count: 1 }
     ],
     timeLimit: 180, // 3 minutes
     fileSystem: {
@@ -242,9 +242,7 @@ export const GAME_LEVELS: Level[] = [
     allowedCommands: ['ls', 'cat', 'cd', 'pwd', 'help', 'clear', 'grep', 'find', 'curl', 'upload'],
     expectedCommands: ['upload', 'cat'],
     completionRequirements: [
-      { type: 'upload', target: 'cnn' },
-      { type: 'upload', target: 'bbc' },
-      { type: 'upload', target: 'wikileaks' }
+      { type: 'upload', target: ['cnn', 'bbc', 'wikileaks', 'reuters', 'foxnews', 'aljazeera'], count: 3 }
     ],
     timeLimit: 180, // 3 minutes
     fileSystem: {

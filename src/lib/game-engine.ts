@@ -990,17 +990,13 @@ export class GameEngine {
         return this.state.passwordChanged;
 
       case 'file_creation':
-        // Level 6: Check if file was created with correct content
+        // Level 6: Check if file was created
         const targetFile = requirement.target as string;
-        if (this.createdFilesWithContent.has(targetFile)) {
-          // For Level 6, verify the backdoor.php content includes the necessary code
-          const content = this.createdFilesWithContent.get(targetFile);
-          return (content?.includes('backdoor') || content?.includes('shell_exec') || content?.includes('system')) ?? false;
-        }
-        // Fallback: check if touch command was used
-        return this.commandHistory.some(cmd =>
-          cmd.startsWith('touch') && cmd.includes(targetFile)
-        );
+        // Check if file exists in the filesystem (created via echo or touch)
+        return this.currentLevel.fileSystem[targetFile] !== undefined ||
+               this.commandHistory.some(cmd =>
+                 cmd.startsWith('touch') && cmd.includes(targetFile)
+               );
 
       case 'command_execution':
         const target = requirement.target as string;
@@ -1024,18 +1020,20 @@ export class GameEngine {
         return this.commandHistory.some(cmd => cmd.startsWith(target));
 
       case 'upload':
-        // Level 10: Verify uploads to 3 different destinations
+        // Level 10: Verify uploads to required destinations
         if (Array.isArray(requirement.target)) {
           const uniqueDests = new Set(
             this.uploadsCompleted.map(u => u.split('→')[1])
           );
-          return uniqueDests.size >= 3;
+          const requiredCount = requirement.count || requirement.target.length;
+          return uniqueDests.size >= requiredCount;
         }
         return this.uploadsCompleted.some(u => u.includes(requirement.target as string));
 
       case 'decrypt':
-        // Level 5: Verify base64 actually decoded a file
-        return this.decryptedFiles.length > 0;
+        // Level 5: Verify base64 decoded the SPECIFIC target file
+        const decryptTarget = requirement.target as string;
+        return this.decryptedFiles.includes(decryptTarget);
 
       default:
         return false;
