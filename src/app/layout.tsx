@@ -16,9 +16,9 @@ export const metadata: Metadata = {
   title: "Operation Black Gold - Hacking Simulator",
   description: "A terminal-based hacking simulator game. Expose the conspiracy behind the oil crisis.",
   icons: {
-    icon: "/icon.png",
-    shortcut: "/icon.png",
-    apple: "/icon.png",
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
   },
   manifest: "/manifest.json",
   appleWebApp: {
